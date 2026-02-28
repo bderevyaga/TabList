@@ -51,12 +51,24 @@ class TextFormatter {
     return `Opening ${openedCount}/${totalCount} tabs...`;
   }
 
+  openingTabs() {
+    return 'Opening tabs...';
+  }
+
   openedTabs(count) {
     return `Opened ${this.pluralize(count, 'tab')}.`;
   }
 
   copiedToClipboard() {
     return 'Copied to clipboard.';
+  }
+
+  closingTabs(count) {
+    return `Closing ${this.pluralize(count, 'tab')}...`;
+  }
+
+  closedTabs(count) {
+    return `Closed ${this.pluralize(count, 'tab')}.`;
   }
 }
 
@@ -165,36 +177,60 @@ class BatchTabOpener {
 
   async open(urls, onProgress) {
     const existingTabs = await this.tabService.getAllTabs();
-    const tabIdsByUrl = new Map();
+    const tabsByUrl = new Map();
 
     existingTabs.forEach((tab) => {
       if (!tab.url || typeof tab.id !== 'number') {
         return;
       }
 
-      if (!tabIdsByUrl.has(tab.url)) {
-        tabIdsByUrl.set(tab.url, []);
+      if (!tabsByUrl.has(tab.url)) {
+        tabsByUrl.set(tab.url, []);
       }
-      tabIdsByUrl.get(tab.url).push(tab.id);
+      tabsByUrl.get(tab.url).push({
+        id: tab.id,
+        isActive: Boolean(tab.active)
+      });
     });
+
+    const totalToOpen = urls.reduce((count, url) => {
+      const hasActiveTab = (tabsByUrl.get(url) || []).some((tab) => tab.isActive);
+      return count + (hasActiveTab ? 0 : 1);
+    }, 0);
+    let openedCount = 0;
 
     for (let index = 0; index < urls.length; index += this.batchSize) {
       const batch = urls.slice(index, index + this.batchSize);
-      await Promise.all(batch.map(async (url) => {
-        const existingIds = tabIdsByUrl.get(url) || [];
-        if (existingIds.length) {
-          await this.tabService.closeTabs(existingIds);
+      const openedInBatch = await Promise.all(batch.map(async (url) => {
+        const existingTabsForUrl = tabsByUrl.get(url) || [];
+        const closableIds = existingTabsForUrl
+          .filter((tab) => !tab.isActive)
+          .map((tab) => tab.id);
+        const hasActiveTab = existingTabsForUrl.some((tab) => tab.isActive);
+
+        if (closableIds.length) {
+          await this.tabService.closeTabs(closableIds);
         }
-        await this.tabService.openInactiveTab(url);
+
+        if (!hasActiveTab) {
+          await this.tabService.openInactiveTab(url);
+          return 1;
+        }
+        return 0;
       }));
 
-      const openedCount = Math.min(index + this.batchSize, urls.length);
-      onProgress(openedCount, urls.length);
+      openedCount += openedInBatch.reduce((sum, value) => sum + value, 0);
 
-      if (openedCount < urls.length) {
+      if (totalToOpen > 0) {
+        onProgress(openedCount, totalToOpen);
+      }
+
+      if (index + this.batchSize < urls.length) {
         await this.wait(this.batchDelayMs);
       }
     }
+
+    return openedCount;
   }
 }
 
@@ -205,6 +241,7 @@ class PopupView {
     this.open = documentRef.getElementById('open');
     this.tabs = documentRef.getElementById('tabs');
     this.clear = documentRef.getElementById('clear');
+    this.closeAll = documentRef.getElementById('close-all');
     this.status = documentRef.getElementById('status');
     this.summary = documentRef.getElementById('summary');
   }
@@ -214,6 +251,7 @@ class PopupView {
     this.input.addEventListener('input', handlers.onInputChanged);
     this.copy.addEventListener('click', handlers.onCopy);
     this.clear.addEventListener('click', handlers.onClear);
+    this.closeAll.addEventListener('click', handlers.onCloseAllTabs);
     this.open.addEventListener('click', handlers.onOpen);
   }
 
@@ -238,11 +276,12 @@ class PopupView {
   }
 
   setControlsState(state) {
-    this.open.disabled = state.isOpening || !state.hasUrls;
-    this.tabs.disabled = state.isOpening;
-    this.copy.disabled = state.isOpening || !state.hasText;
-    this.clear.disabled = state.isOpening || !state.hasText;
-    this.input.disabled = state.isOpening;
+    this.open.disabled = state.isBusy || !state.hasUrls;
+    this.tabs.disabled = state.isBusy;
+    this.copy.disabled = state.isBusy || !state.hasText;
+    this.clear.disabled = state.isBusy || !state.hasText;
+    this.closeAll.disabled = state.isBusy;
+    this.input.disabled = state.isBusy;
   }
 }
 
@@ -255,14 +294,12 @@ class PopupController {
     this.tabService = dependencies.tabService;
     this.tabOpener = dependencies.tabOpener;
     this.copyText = dependencies.copyText;
-    this.confirm = dependencies.confirm;
-
-    this.largeOpenThreshold = options.largeOpenThreshold;
     this.temporarySummaryMs = options.temporarySummaryMs;
     this.autosaveDelayMs = options.autosaveDelayMs;
 
     this.state = {
       isOpening: false,
+      isClosingAll: false,
       summaryTimer: null,
       saveTimer: null
     };
@@ -274,6 +311,7 @@ class PopupController {
       onInputChanged: () => this.handleInputChanged(),
       onCopy: () => this.handleCopy(),
       onClear: () => this.handleClear(),
+      onCloseAllTabs: () => this.handleCloseAllTabs(),
       onOpen: () => this.handleOpen()
     });
 
@@ -303,7 +341,7 @@ class PopupController {
     }
 
     this.view.setControlsState({
-      isOpening: this.state.isOpening,
+      isBusy: this.state.isOpening || this.state.isClosingAll,
       hasUrls: urls.length > 0,
       hasText: text.trim().length > 0
     });
@@ -422,7 +460,7 @@ class PopupController {
   }
 
   async handleOpen() {
-    if (this.state.isOpening) {
+    if (this.state.isOpening || this.state.isClosingAll) {
       return;
     }
 
@@ -432,28 +470,73 @@ class PopupController {
       return;
     }
 
-    if (urls.length >= this.largeOpenThreshold) {
-      const shouldOpen = this.confirm(`Open ${urls.length} tabs? This may take a few seconds.`);
-      if (!shouldOpen) {
-        this.showTemporarySummary('Opening canceled.');
-        return;
-      }
-    }
-
     this.state.isOpening = true;
     this.render(true);
-    this.view.setSummary(this.formatter.openingProgress(0, urls.length));
+    this.view.setSummary(this.formatter.openingTabs());
 
     let finishMessage = null;
     try {
-      await this.tabOpener.open(urls, (openedCount, totalCount) => {
-        this.view.setSummary(this.formatter.openingProgress(openedCount, totalCount));
+      const openedCount = await this.tabOpener.open(urls, (openedCountValue, totalCount) => {
+        this.view.setSummary(this.formatter.openingProgress(openedCountValue, totalCount));
       });
-      finishMessage = this.formatter.openedTabs(urls.length);
+      finishMessage = this.formatter.openedTabs(openedCount);
     } catch (_error) {
       finishMessage = 'Failed to open tabs.';
     } finally {
       this.state.isOpening = false;
+      this.render(true);
+    }
+
+    this.showTemporarySummary(finishMessage);
+  }
+
+  async handleCloseAllTabs() {
+    if (this.state.isOpening || this.state.isClosingAll) {
+      return;
+    }
+
+    this.clearSummaryTimer();
+
+    const listedUrls = this.parser.extractUnique(this.view.getInputText());
+    if (!listedUrls.length) {
+      this.showTemporarySummary('No URLs in the list.');
+      return;
+    }
+
+    let tabs = [];
+    try {
+      tabs = await this.tabService.getAllTabs();
+    } catch (_error) {
+      this.showTemporarySummary('Failed to read open tabs.');
+      return;
+    }
+
+    const listedUrlSet = new Set(listedUrls);
+    const tabIds = tabs
+      .filter((tab) => (
+        typeof tab.id === 'number'
+        && !tab.active
+        && typeof tab.url === 'string'
+        && listedUrlSet.has(tab.url)
+      ))
+      .map((tab) => tab.id);
+    if (!tabIds.length) {
+      this.showTemporarySummary('No listed tabs to close.');
+      return;
+    }
+
+    this.state.isClosingAll = true;
+    this.render(true);
+    this.view.setSummary(this.formatter.closingTabs(tabIds.length));
+
+    let finishMessage = null;
+    try {
+      await this.tabService.closeTabs(tabIds);
+      finishMessage = this.formatter.closedTabs(tabIds.length);
+    } catch (_error) {
+      finishMessage = 'Failed to close tabs.';
+    } finally {
+      this.state.isClosingAll = false;
       this.render(true);
     }
 
@@ -465,27 +548,34 @@ const createDelay = (milliseconds) => new Promise((resolve) => {
   setTimeout(resolve, milliseconds);
 });
 
-const createClipboardWriter = (documentRef, navigatorRef) => async (text) => {
-  if (navigatorRef.clipboard && typeof navigatorRef.clipboard.writeText === 'function') {
-    await navigatorRef.clipboard.writeText(text);
-    return;
+const createClipboardWriter = (documentRef, navigatorRef) => {
+  const clipboard = navigatorRef.clipboard;
+  if (clipboard && typeof clipboard.writeText === 'function') {
+    return (text) => clipboard.writeText(text);
   }
 
-  const helper = documentRef.createElement('textarea');
-  helper.value = text;
-  helper.setAttribute('readonly', '');
-  helper.style.position = 'fixed';
-  helper.style.top = '-1000px';
-  helper.style.left = '-1000px';
-  documentRef.body.appendChild(helper);
-  helper.focus();
-  helper.select();
-  const copied = documentRef.execCommand('copy');
-  documentRef.body.removeChild(helper);
+  return async (text) => {
+    const helper = documentRef.createElement('textarea');
+    helper.value = text;
+    helper.setAttribute('readonly', '');
+    helper.style.position = 'fixed';
+    helper.style.top = '-1000px';
+    helper.style.left = '-1000px';
+    documentRef.body.appendChild(helper);
 
-  if (!copied) {
-    throw new Error('Copy command failed');
-  }
+    let copied = false;
+    try {
+      helper.focus();
+      helper.select();
+      copied = documentRef.execCommand('copy');
+    } finally {
+      helper.remove();
+    }
+
+    if (!copied) {
+      throw new Error('Copy command failed');
+    }
+  };
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -509,11 +599,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       storage: storage,
       tabService: tabService,
       tabOpener: tabOpener,
-      copyText: copyText,
-      confirm: window.confirm.bind(window)
+      copyText: copyText
     },
     {
-      largeOpenThreshold: 30,
       temporarySummaryMs: 1600,
       autosaveDelayMs: 350
     }

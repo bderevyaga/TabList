@@ -17,7 +17,10 @@
       </header>
       <div class="input-head animate a2">
         <label for="input" class="label">Link List</label>
-        <button id="copy" type="button" aria-label="Copy link list to clipboard">Copy</button>
+        <div class="input-actions">
+          <button id="copy" type="button" aria-label="Copy link list to clipboard">Copy</button>
+          <button id="clear" type="button" aria-label="Clear saved links">Clear</button>
+        </div>
       </div>
       <textarea autofocus id="input" aria-label="Link list input" placeholder="https://example.com&#10;https://docs.example.com"></textarea>
       <div class="meta animate a3">
@@ -27,7 +30,7 @@
       <div class="actions animate a4">
         <button id="open" type="button" aria-label="Open links from list">Open Links</button>
         <button id="tabs" type="button" aria-label="Capture current tabs">Capture Tabs</button>
-        <button id="clear" type="button" aria-label="Clear saved links">Clear</button>
+        <button id="close-all" type="button" aria-label="Close tabs from list">Close Listed</button>
       </div>
     </main>
   </body>

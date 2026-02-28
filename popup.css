@@ -94,6 +94,12 @@ h1 {
   gap: 8px;
 }
 
+.input-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 textarea {
   flex: 1;
   width: 100%;
@@ -144,7 +150,7 @@ textarea:focus {
 
 .actions {
   display: grid;
-  grid-template-columns: 1.2fr 1fr auto;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
 }
 
@@ -180,18 +186,25 @@ button:focus-visible {
   border: 1px solid #bfdeee;
 }
 
-#clear {
-  color: var(--danger);
-  background: linear-gradient(120deg, #fff1f0, #ffe6e3);
-  border: 1px solid #f2cac7;
+#close-all {
+  color: #fff;
+  background: linear-gradient(120deg, #cf5a54, #b1443f);
 }
 
-#copy {
+.input-actions #copy {
   padding: 6px 10px;
   font-size: 11px;
   color: #1c475a;
   background: linear-gradient(120deg, #f2fbff, #e6f3ff);
   border: 1px solid #c8dff0;
+}
+
+.input-actions #clear {
+  padding: 6px 10px;
+  font-size: 11px;
+  color: var(--danger);
+  background: linear-gradient(120deg, #fff1f0, #ffe6e3);
+  border: 1px solid #f2cac7;
 }
 
 .animate {
