@@ -1,3 +1,3 @@
 chrome.runtime.onInstalled.addListener(() => {
-  console.log("Manager Extension Installed");
+  console.log("TabDock Extension Installed");
 });

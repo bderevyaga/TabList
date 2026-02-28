@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "Manager",
+    "name": "TabDock",
     "version": "1.0",
-    "description": "Manage and update SameSite attribute for cookies.",
+    "description": "Save, manage, and reopen URL lists from your browser tabs.",
     "permissions": [
       "activeTab",
       "storage",
