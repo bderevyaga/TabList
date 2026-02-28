@@ -18,7 +18,7 @@
 html,
 body {
   width: 700px;
-  height: 560px;
+  height: 440px;
   overflow: hidden;
 }
 
@@ -183,9 +183,3 @@ button:disabled {
 .a2 { animation-delay: 70ms; }
 .a3 { animation-delay: 120ms; }
 .a4 { animation-delay: 170ms; }
-
-@media (max-width: 730px) {
-  .actions {
-    grid-template-columns: 1fr;
-  }
-}

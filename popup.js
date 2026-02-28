@@ -1,139 +1,346 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const input = document.getElementById('input');
-  const open = document.getElementById('open');
-  const tabs = document.getElementById('tabs');
-  const clear = document.getElementById('clear');
-  const status = document.getElementById('status');
-  const summary = document.getElementById('summary');
-  let summaryTimer = null;
-  let isOpening = false;
+class UrlParser {
+  constructor(urlPattern, httpPattern) {
+    this.urlPattern = urlPattern;
+    this.httpPattern = httpPattern;
+  }
 
-  const OPEN_BATCH_SIZE = 6;
-  const OPEN_BATCH_DELAY_MS = 120;
-  const LARGE_OPEN_CONFIRM_THRESHOLD = 30;
+  extract(text) {
+    return text.match(this.urlPattern) || [];
+  }
 
-  const extractUrls = (text) => text.match(/https?:\/\/[^\s]+/g) || [];
-  const pluralize = (count, word) => `${count} ${word}${count === 1 ? '' : 's'}`;
+  extractUnique(text) {
+    return this.makeUnique(this.extract(text));
+  }
 
-  const saveText = () => {
-    chrome.storage.local.set({ text: input.value });
-  };
+  countNonEmptyLines(text) {
+    return text.split(/\r?\n/).filter((line) => line.trim().length > 0).length;
+  }
 
-  const updateUi = () => {
-    const urls = extractUrls(input.value);
-    const lines = input.value.split(/\r?\n/).filter((line) => line.trim().length > 0).length;
+  fromTabs(tabs) {
+    const urls = tabs.map((tab) => tab.url || '').filter((url) => this.httpPattern.test(url));
+    return this.makeUnique(urls);
+  }
 
-    status.textContent = pluralize(urls.length, 'link');
-    if (lines === 0) {
-      summary.textContent = 'Add URLs or capture your current tabs.';
-    } else {
-      summary.textContent = `${pluralize(urls.length, 'valid URL')} across ${pluralize(lines, 'line')}.`;
+  makeUnique(values) {
+    return [...new Set(values)];
+  }
+}
+
+class TextFormatter {
+  pluralize(count, word) {
+    return `${count} ${word}${count === 1 ? '' : 's'}`;
+  }
+
+  linkBadge(count) {
+    return this.pluralize(count, 'link');
+  }
+
+  defaultSummary(urlCount, lineCount) {
+    if (lineCount === 0) {
+      return 'Add URLs or capture your current tabs.';
     }
 
-    open.disabled = isOpening || urls.length === 0;
-    tabs.disabled = isOpening;
-    clear.disabled = isOpening || input.value.trim().length === 0;
-    input.disabled = isOpening;
-  };
+    return `${this.pluralize(urlCount, 'valid URL')} across ${this.pluralize(lineCount, 'line')}.`;
+  }
 
-  const setTemporarySummary = (message) => {
-    summary.textContent = message;
-    if (summaryTimer) {
-      clearTimeout(summaryTimer);
-    }
-    summaryTimer = setTimeout(updateUi, 1600);
-  };
+  capturedTabs(count) {
+    return `Captured ${this.pluralize(count, 'tab')}.`;
+  }
 
-  const delay = (ms) => new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
+  openingProgress(openedCount, totalCount) {
+    return `Opening ${openedCount}/${totalCount} tabs...`;
+  }
 
-  const createTab = (url) => new Promise((resolve) => {
-    chrome.tabs.create(
-      {
-        url: url,
-        active: false
-      },
-      () => resolve()
-    );
-  });
+  openedTabs(count) {
+    return `Opened ${this.pluralize(count, 'tab')}.`;
+  }
+}
 
-  const openUrlsInBatches = async (urls) => {
-    for (let i = 0; i < urls.length; i += OPEN_BATCH_SIZE) {
-      const batch = urls.slice(i, i + OPEN_BATCH_SIZE);
-      await Promise.all(batch.map((url) => createTab(url)));
+class StorageService {
+  constructor(storageArea, key) {
+    this.storageArea = storageArea;
+    this.key = key;
+  }
 
-      const openedCount = Math.min(i + OPEN_BATCH_SIZE, urls.length);
-      summary.textContent = `Opening ${openedCount}/${urls.length} tabs...`;
+  loadText() {
+    return new Promise((resolve) => {
+      this.storageArea.get([this.key], (result) => {
+        resolve(typeof result[this.key] === 'string' ? result[this.key] : '');
+      });
+    });
+  }
+
+  saveText(text) {
+    return new Promise((resolve) => {
+      this.storageArea.set({ [this.key]: text }, () => resolve());
+    });
+  }
+
+  clearText() {
+    return new Promise((resolve) => {
+      this.storageArea.remove([this.key], () => resolve());
+    });
+  }
+}
+
+class TabService {
+  constructor(tabsApi) {
+    this.tabsApi = tabsApi;
+  }
+
+  getAllTabs() {
+    return new Promise((resolve) => {
+      this.tabsApi.query({}, (tabs) => resolve(tabs));
+    });
+  }
+
+  openInactiveTab(url) {
+    return new Promise((resolve) => {
+      this.tabsApi.create({ url: url, active: false }, () => resolve());
+    });
+  }
+}
+
+class BatchTabOpener {
+  constructor(tabService, options) {
+    this.tabService = tabService;
+    this.batchSize = options.batchSize;
+    this.batchDelayMs = options.batchDelayMs;
+    this.wait = options.wait;
+  }
+
+  async open(urls, onProgress) {
+    for (let index = 0; index < urls.length; index += this.batchSize) {
+      const batch = urls.slice(index, index + this.batchSize);
+      await Promise.all(batch.map((url) => this.tabService.openInactiveTab(url)));
+
+      const openedCount = Math.min(index + this.batchSize, urls.length);
+      onProgress(openedCount, urls.length);
 
       if (openedCount < urls.length) {
-        await delay(OPEN_BATCH_DELAY_MS);
+        await this.wait(this.batchDelayMs);
       }
     }
-  };
+  }
+}
 
-  tabs.addEventListener('click', () => {
-    chrome.tabs.query({}, (allTabs) => {
-      const urls = [...new Set(
-        allTabs
-          .map((tab) => tab.url || '')
-          .filter((url) => /^https?:\/\//.test(url))
-      )];
+class PopupView {
+  constructor(documentRef) {
+    this.input = documentRef.getElementById('input');
+    this.open = documentRef.getElementById('open');
+    this.tabs = documentRef.getElementById('tabs');
+    this.clear = documentRef.getElementById('clear');
+    this.status = documentRef.getElementById('status');
+    this.summary = documentRef.getElementById('summary');
+  }
 
-      input.value = urls.join('\n');
-      saveText();
-      updateUi();
-      setTemporarySummary(`Captured ${pluralize(urls.length, 'tab')}.`);
+  bindHandlers(handlers) {
+    this.tabs.addEventListener('click', handlers.onCaptureTabs);
+    this.input.addEventListener('input', handlers.onInputChanged);
+    this.clear.addEventListener('click', handlers.onClear);
+    this.open.addEventListener('click', handlers.onOpen);
+  }
+
+  getInputText() {
+    return this.input.value;
+  }
+
+  setInputText(text) {
+    this.input.value = text;
+  }
+
+  focusInput() {
+    this.input.focus();
+  }
+
+  setStatus(text) {
+    this.status.textContent = text;
+  }
+
+  setSummary(text) {
+    this.summary.textContent = text;
+  }
+
+  setControlsState(state) {
+    this.open.disabled = state.isOpening || !state.hasUrls;
+    this.tabs.disabled = state.isOpening;
+    this.clear.disabled = state.isOpening || !state.hasText;
+    this.input.disabled = state.isOpening;
+  }
+}
+
+class PopupController {
+  constructor(dependencies, options) {
+    this.view = dependencies.view;
+    this.parser = dependencies.parser;
+    this.formatter = dependencies.formatter;
+    this.storage = dependencies.storage;
+    this.tabService = dependencies.tabService;
+    this.tabOpener = dependencies.tabOpener;
+    this.confirm = dependencies.confirm;
+
+    this.largeOpenThreshold = options.largeOpenThreshold;
+    this.temporarySummaryMs = options.temporarySummaryMs;
+
+    this.state = {
+      isOpening: false,
+      summaryTimer: null
+    };
+  }
+
+  async init() {
+    this.view.bindHandlers({
+      onCaptureTabs: () => this.handleCaptureTabs(),
+      onInputChanged: () => this.handleInputChanged(),
+      onClear: () => this.handleClear(),
+      onOpen: () => this.handleOpen()
     });
-  });
 
+    const savedText = await this.storage.loadText();
+    this.view.setInputText(savedText);
+    this.render();
+  }
 
-  chrome.storage.local.get(['text'], (result) => {
-    if (typeof result.text === 'string') {
-      input.value = result.text;
+  render(preserveSummary) {
+    const text = this.view.getInputText();
+    const urls = this.parser.extractUnique(text);
+    const lineCount = this.parser.countNonEmptyLines(text);
+
+    this.view.setStatus(this.formatter.linkBadge(urls.length));
+    if (!preserveSummary) {
+      this.view.setSummary(this.formatter.defaultSummary(urls.length, lineCount));
     }
-    updateUi();
-  });
 
-  input.addEventListener('input', () => {
-    saveText();
-    updateUi();
-  });
-
-  clear.addEventListener('click', () => {
-    chrome.storage.local.remove(['text'], () => {
-      input.value = '';
-      updateUi();
-      input.focus();
+    this.view.setControlsState({
+      isOpening: this.state.isOpening,
+      hasUrls: urls.length > 0,
+      hasText: text.trim().length > 0
     });
-  });
 
-  open.addEventListener('click', async () => {
-    const urls = [...new Set(extractUrls(input.value))];
+    return urls;
+  }
 
-    if (!urls.length || isOpening) {
-      updateUi();
+  clearSummaryTimer() {
+    if (this.state.summaryTimer) {
+      clearTimeout(this.state.summaryTimer);
+      this.state.summaryTimer = null;
+    }
+  }
+
+  showTemporarySummary(message) {
+    this.clearSummaryTimer();
+    this.view.setSummary(message);
+    this.state.summaryTimer = setTimeout(() => {
+      this.state.summaryTimer = null;
+      this.render(false);
+    }, this.temporarySummaryMs);
+  }
+
+  handleInputChanged() {
+    this.clearSummaryTimer();
+    const text = this.view.getInputText();
+    this.storage.saveText(text);
+    this.render(false);
+  }
+
+  async handleCaptureTabs() {
+    if (this.state.isOpening) {
       return;
     }
 
-    if (urls.length >= LARGE_OPEN_CONFIRM_THRESHOLD) {
-      const shouldOpen = confirm(`Open ${urls.length} tabs? This may take a few seconds.`);
+    this.clearSummaryTimer();
+    const tabs = await this.tabService.getAllTabs();
+    const urls = this.parser.fromTabs(tabs);
+
+    this.view.setInputText(urls.join('\n'));
+    await this.storage.saveText(this.view.getInputText());
+    this.render(false);
+    this.showTemporarySummary(this.formatter.capturedTabs(urls.length));
+  }
+
+  async handleClear() {
+    if (this.state.isOpening) {
+      return;
+    }
+
+    this.clearSummaryTimer();
+    await this.storage.clearText();
+    this.view.setInputText('');
+    this.view.focusInput();
+    this.render(false);
+  }
+
+  async handleOpen() {
+    if (this.state.isOpening) {
+      return;
+    }
+
+    this.clearSummaryTimer();
+    const urls = this.render(false);
+    if (!urls.length) {
+      return;
+    }
+
+    if (urls.length >= this.largeOpenThreshold) {
+      const shouldOpen = this.confirm(`Open ${urls.length} tabs? This may take a few seconds.`);
       if (!shouldOpen) {
-        setTemporarySummary('Opening canceled.');
+        this.showTemporarySummary('Opening canceled.');
         return;
       }
     }
 
-    isOpening = true;
-    updateUi();
-    summary.textContent = `Opening 0/${urls.length} tabs...`;
+    this.state.isOpening = true;
+    this.render(true);
+    this.view.setSummary(this.formatter.openingProgress(0, urls.length));
 
+    let finishMessage = null;
     try {
-      await openUrlsInBatches(urls);
-      setTemporarySummary(`Opened ${pluralize(urls.length, 'tab')}.`);
+      await this.tabOpener.open(urls, (openedCount, totalCount) => {
+        this.view.setSummary(this.formatter.openingProgress(openedCount, totalCount));
+      });
+      finishMessage = this.formatter.openedTabs(urls.length);
+    } catch (_error) {
+      finishMessage = 'Failed to open tabs.';
     } finally {
-      isOpening = false;
-      updateUi();
+      this.state.isOpening = false;
+      this.render(true);
     }
+
+    this.showTemporarySummary(finishMessage);
+  }
+}
+
+const createDelay = (milliseconds) => new Promise((resolve) => {
+  setTimeout(resolve, milliseconds);
+});
+
+document.addEventListener('DOMContentLoaded', async () => {
+  const parser = new UrlParser(/https?:\/\/[^\s]+/g, /^https?:\/\//);
+  const formatter = new TextFormatter();
+  const storage = new StorageService(chrome.storage.local, 'text');
+  const tabService = new TabService(chrome.tabs);
+  const tabOpener = new BatchTabOpener(tabService, {
+    batchSize: 6,
+    batchDelayMs: 120,
+    wait: createDelay
   });
+
+  const view = new PopupView(document);
+  const controller = new PopupController(
+    {
+      view: view,
+      parser: parser,
+      formatter: formatter,
+      storage: storage,
+      tabService: tabService,
+      tabOpener: tabOpener,
+      confirm: window.confirm.bind(window)
+    },
+    {
+      largeOpenThreshold: 30,
+      temporarySummaryMs: 1600
+    }
+  );
+
+  await controller.init();
 });
