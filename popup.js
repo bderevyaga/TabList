@@ -54,6 +54,10 @@ class TextFormatter {
   openedTabs(count) {
     return `Opened ${this.pluralize(count, 'tab')}.`;
   }
+
+  copiedToClipboard() {
+    return 'Copied to clipboard.';
+  }
 }
 
 class StorageService {
@@ -132,6 +136,23 @@ class TabService {
       });
     });
   }
+
+  closeTabs(tabIds) {
+    if (!tabIds.length) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+      this.tabsApi.remove(tabIds, () => {
+        const error = chrome.runtime.lastError;
+        if (error) {
+          reject(new Error(error.message));
+          return;
+        }
+        resolve();
+      });
+    });
+  }
 }
 
 class BatchTabOpener {
@@ -143,9 +164,29 @@ class BatchTabOpener {
   }
 
   async open(urls, onProgress) {
+    const existingTabs = await this.tabService.getAllTabs();
+    const tabIdsByUrl = new Map();
+
+    existingTabs.forEach((tab) => {
+      if (!tab.url || typeof tab.id !== 'number') {
+        return;
+      }
+
+      if (!tabIdsByUrl.has(tab.url)) {
+        tabIdsByUrl.set(tab.url, []);
+      }
+      tabIdsByUrl.get(tab.url).push(tab.id);
+    });
+
     for (let index = 0; index < urls.length; index += this.batchSize) {
       const batch = urls.slice(index, index + this.batchSize);
-      await Promise.all(batch.map((url) => this.tabService.openInactiveTab(url)));
+      await Promise.all(batch.map(async (url) => {
+        const existingIds = tabIdsByUrl.get(url) || [];
+        if (existingIds.length) {
+          await this.tabService.closeTabs(existingIds);
+        }
+        await this.tabService.openInactiveTab(url);
+      }));
 
       const openedCount = Math.min(index + this.batchSize, urls.length);
       onProgress(openedCount, urls.length);
@@ -160,6 +201,7 @@ class BatchTabOpener {
 class PopupView {
   constructor(documentRef) {
     this.input = documentRef.getElementById('input');
+    this.copy = documentRef.getElementById('copy');
     this.open = documentRef.getElementById('open');
     this.tabs = documentRef.getElementById('tabs');
     this.clear = documentRef.getElementById('clear');
@@ -170,6 +212,7 @@ class PopupView {
   bindHandlers(handlers) {
     this.tabs.addEventListener('click', handlers.onCaptureTabs);
     this.input.addEventListener('input', handlers.onInputChanged);
+    this.copy.addEventListener('click', handlers.onCopy);
     this.clear.addEventListener('click', handlers.onClear);
     this.open.addEventListener('click', handlers.onOpen);
   }
@@ -197,6 +240,7 @@ class PopupView {
   setControlsState(state) {
     this.open.disabled = state.isOpening || !state.hasUrls;
     this.tabs.disabled = state.isOpening;
+    this.copy.disabled = state.isOpening || !state.hasText;
     this.clear.disabled = state.isOpening || !state.hasText;
     this.input.disabled = state.isOpening;
   }
@@ -210,6 +254,7 @@ class PopupController {
     this.storage = dependencies.storage;
     this.tabService = dependencies.tabService;
     this.tabOpener = dependencies.tabOpener;
+    this.copyText = dependencies.copyText;
     this.confirm = dependencies.confirm;
 
     this.largeOpenThreshold = options.largeOpenThreshold;
@@ -227,6 +272,7 @@ class PopupController {
     this.view.bindHandlers({
       onCaptureTabs: () => this.handleCaptureTabs(),
       onInputChanged: () => this.handleInputChanged(),
+      onCopy: () => this.handleCopy(),
       onClear: () => this.handleClear(),
       onOpen: () => this.handleOpen()
     });
@@ -355,6 +401,26 @@ class PopupController {
     this.render(false);
   }
 
+  async handleCopy() {
+    if (this.state.isOpening) {
+      return;
+    }
+
+    this.clearSummaryTimer();
+    const text = this.view.getInputText();
+    if (!text.trim()) {
+      this.showTemporarySummary('Nothing to copy.');
+      return;
+    }
+
+    try {
+      await this.copyText(text);
+      this.showTemporarySummary(this.formatter.copiedToClipboard());
+    } catch (_error) {
+      this.showTemporarySummary('Failed to copy text.');
+    }
+  }
+
   async handleOpen() {
     if (this.state.isOpening) {
       return;
@@ -399,11 +465,35 @@ const createDelay = (milliseconds) => new Promise((resolve) => {
   setTimeout(resolve, milliseconds);
 });
 
+const createClipboardWriter = (documentRef, navigatorRef) => async (text) => {
+  if (navigatorRef.clipboard && typeof navigatorRef.clipboard.writeText === 'function') {
+    await navigatorRef.clipboard.writeText(text);
+    return;
+  }
+
+  const helper = documentRef.createElement('textarea');
+  helper.value = text;
+  helper.setAttribute('readonly', '');
+  helper.style.position = 'fixed';
+  helper.style.top = '-1000px';
+  helper.style.left = '-1000px';
+  documentRef.body.appendChild(helper);
+  helper.focus();
+  helper.select();
+  const copied = documentRef.execCommand('copy');
+  documentRef.body.removeChild(helper);
+
+  if (!copied) {
+    throw new Error('Copy command failed');
+  }
+};
+
 document.addEventListener('DOMContentLoaded', async () => {
   const parser = new UrlParser(/https?:\/\/[^\s]+/g, /^https?:\/\//);
   const formatter = new TextFormatter();
   const storage = new StorageService(chrome.storage.local, 'text');
   const tabService = new TabService(chrome.tabs);
+  const copyText = createClipboardWriter(document, navigator);
   const tabOpener = new BatchTabOpener(tabService, {
     batchSize: 6,
     batchDelayMs: 120,
@@ -419,6 +509,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       storage: storage,
       tabService: tabService,
       tabOpener: tabOpener,
+      copyText: copyText,
       confirm: window.confirm.bind(window)
     },
     {

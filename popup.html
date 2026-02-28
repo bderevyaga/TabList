@@ -15,7 +15,10 @@
         </div>
         <span id="status" class="badge" role="status" aria-live="polite" aria-atomic="true">0 links</span>
       </header>
-      <label for="input" class="label animate a2">Link List</label>
+      <div class="input-head animate a2">
+        <label for="input" class="label">Link List</label>
+        <button id="copy" type="button" aria-label="Copy link list to clipboard">Copy</button>
+      </div>
       <textarea autofocus id="input" aria-label="Link list input" placeholder="https://example.com&#10;https://docs.example.com"></textarea>
       <div class="meta animate a3">
         <span id="summary" aria-live="polite" aria-atomic="true">Add URLs or capture your current tabs.</span>
