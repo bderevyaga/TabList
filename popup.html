@@ -13,18 +13,18 @@
           <h1>TabDock</h1>
           <p class="subtitle">Save links, capture open tabs, and reopen them in one click.</p>
         </div>
-        <span id="status" class="badge">0 links</span>
+        <span id="status" class="badge" role="status" aria-live="polite" aria-atomic="true">0 links</span>
       </header>
-      <p class="label animate a2">Link List</p>
-      <textarea autofocus id="input" placeholder="https://example.com&#10;https://docs.example.com"></textarea>
+      <label for="input" class="label animate a2">Link List</label>
+      <textarea autofocus id="input" aria-label="Link list input" placeholder="https://example.com&#10;https://docs.example.com"></textarea>
       <div class="meta animate a3">
-        <span id="summary">Add URLs or capture your current tabs.</span>
+        <span id="summary" aria-live="polite" aria-atomic="true">Add URLs or capture your current tabs.</span>
         <span class="autosave">Autosave on</span>
       </div>
       <div class="actions animate a4">
-        <button id="open">Open Links</button>
-        <button id="tabs">Capture Tabs</button>
-        <button id="clear">Clear</button>
+        <button id="open" type="button" aria-label="Open links from list">Open Links</button>
+        <button id="tabs" type="button" aria-label="Capture current tabs">Capture Tabs</button>
+        <button id="clear" type="button" aria-label="Clear saved links">Clear</button>
       </div>
     </main>
   </body>

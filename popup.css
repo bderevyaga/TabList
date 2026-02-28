@@ -157,6 +157,11 @@ button:disabled {
   cursor: default;
 }
 
+button:focus-visible {
+  outline: 3px solid rgba(15, 157, 142, 0.35);
+  outline-offset: 2px;
+}
+
 #open {
   color: #fff;
   background: linear-gradient(120deg, var(--brand), var(--brand-strong));

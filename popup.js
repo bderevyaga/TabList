@@ -63,22 +63,41 @@ class StorageService {
   }
 
   loadText() {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       this.storageArea.get([this.key], (result) => {
+        const error = chrome.runtime.lastError;
+        if (error) {
+          reject(new Error(error.message));
+          return;
+        }
         resolve(typeof result[this.key] === 'string' ? result[this.key] : '');
       });
     });
   }
 
   saveText(text) {
-    return new Promise((resolve) => {
-      this.storageArea.set({ [this.key]: text }, () => resolve());
+    return new Promise((resolve, reject) => {
+      this.storageArea.set({ [this.key]: text }, () => {
+        const error = chrome.runtime.lastError;
+        if (error) {
+          reject(new Error(error.message));
+          return;
+        }
+        resolve();
+      });
     });
   }
 
   clearText() {
-    return new Promise((resolve) => {
-      this.storageArea.remove([this.key], () => resolve());
+    return new Promise((resolve, reject) => {
+      this.storageArea.remove([this.key], () => {
+        const error = chrome.runtime.lastError;
+        if (error) {
+          reject(new Error(error.message));
+          return;
+        }
+        resolve();
+      });
     });
   }
 }
@@ -89,14 +108,28 @@ class TabService {
   }
 
   getAllTabs() {
-    return new Promise((resolve) => {
-      this.tabsApi.query({}, (tabs) => resolve(tabs));
+    return new Promise((resolve, reject) => {
+      this.tabsApi.query({}, (tabs) => {
+        const error = chrome.runtime.lastError;
+        if (error) {
+          reject(new Error(error.message));
+          return;
+        }
+        resolve(tabs);
+      });
     });
   }
 
   openInactiveTab(url) {
-    return new Promise((resolve) => {
-      this.tabsApi.create({ url: url, active: false }, () => resolve());
+    return new Promise((resolve, reject) => {
+      this.tabsApi.create({ url: url, active: false }, () => {
+        const error = chrome.runtime.lastError;
+        if (error) {
+          reject(new Error(error.message));
+          return;
+        }
+        resolve();
+      });
     });
   }
 }
@@ -181,10 +214,12 @@ class PopupController {
 
     this.largeOpenThreshold = options.largeOpenThreshold;
     this.temporarySummaryMs = options.temporarySummaryMs;
+    this.autosaveDelayMs = options.autosaveDelayMs;
 
     this.state = {
       isOpening: false,
-      summaryTimer: null
+      summaryTimer: null,
+      saveTimer: null
     };
   }
 
@@ -196,9 +231,19 @@ class PopupController {
       onOpen: () => this.handleOpen()
     });
 
-    const savedText = await this.storage.loadText();
+    let savedText = '';
+    let loadFailed = false;
+    try {
+      savedText = await this.storage.loadText();
+    } catch (_error) {
+      loadFailed = true;
+    }
+
     this.view.setInputText(savedText);
-    this.render();
+    this.render(false);
+    if (loadFailed) {
+      this.showTemporarySummary('Failed to load saved links.');
+    }
   }
 
   render(preserveSummary) {
@@ -227,6 +272,13 @@ class PopupController {
     }
   }
 
+  clearSaveTimer() {
+    if (this.state.saveTimer) {
+      clearTimeout(this.state.saveTimer);
+      this.state.saveTimer = null;
+    }
+  }
+
   showTemporarySummary(message) {
     this.clearSummaryTimer();
     this.view.setSummary(message);
@@ -236,10 +288,22 @@ class PopupController {
     }, this.temporarySummaryMs);
   }
 
+  scheduleAutosave() {
+    this.clearSaveTimer();
+    const text = this.view.getInputText();
+    this.state.saveTimer = setTimeout(async () => {
+      this.state.saveTimer = null;
+      try {
+        await this.storage.saveText(text);
+      } catch (_error) {
+        this.showTemporarySummary('Failed to save links.');
+      }
+    }, this.autosaveDelayMs);
+  }
+
   handleInputChanged() {
     this.clearSummaryTimer();
-    const text = this.view.getInputText();
-    this.storage.saveText(text);
+    this.scheduleAutosave();
     this.render(false);
   }
 
@@ -249,11 +313,26 @@ class PopupController {
     }
 
     this.clearSummaryTimer();
-    const tabs = await this.tabService.getAllTabs();
+    this.clearSaveTimer();
+
+    let tabs = [];
+    try {
+      tabs = await this.tabService.getAllTabs();
+    } catch (_error) {
+      this.showTemporarySummary('Failed to read open tabs.');
+      return;
+    }
+
     const urls = this.parser.fromTabs(tabs);
 
     this.view.setInputText(urls.join('\n'));
-    await this.storage.saveText(this.view.getInputText());
+    try {
+      await this.storage.saveText(this.view.getInputText());
+    } catch (_error) {
+      this.render(false);
+      this.showTemporarySummary('Tabs captured but failed to save.');
+      return;
+    }
     this.render(false);
     this.showTemporarySummary(this.formatter.capturedTabs(urls.length));
   }
@@ -264,7 +343,13 @@ class PopupController {
     }
 
     this.clearSummaryTimer();
-    await this.storage.clearText();
+    this.clearSaveTimer();
+    try {
+      await this.storage.clearText();
+    } catch (_error) {
+      this.showTemporarySummary('Failed to clear links.');
+      return;
+    }
     this.view.setInputText('');
     this.view.focusInput();
     this.render(false);
@@ -338,7 +423,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     },
     {
       largeOpenThreshold: 30,
-      temporarySummaryMs: 1600
+      temporarySummaryMs: 1600,
+      autosaveDelayMs: 350
     }
   );
 
