@@ -1,7 +1,7 @@
 :root {
   --bg-top: #eaf9ff;
   --bg-bottom: #fff0df;
-  --panel: rgba(255, 255, 255, 0.88);
+  --panel: #ffffff;
   --text-main: #213040;
   --text-muted: #596674;
   --line: rgba(41, 61, 82, 0.16);
@@ -29,9 +29,7 @@ body {
   padding: 14px;
   font-family: "Avenir Next", "Helvetica Neue", "Trebuchet MS", sans-serif;
   color: var(--text-main);
-  background:
-    radial-gradient(140% 85% at 0% 0%, #dcf4ff 0%, transparent 54%),
-    linear-gradient(140deg, var(--bg-top), var(--bg-bottom));
+  background: linear-gradient(140deg, var(--bg-top), var(--bg-bottom));
   display: flex;
   flex-direction: column;
 }
@@ -46,9 +44,7 @@ body {
   border-radius: 18px;
   background: var(--panel);
   border: 1px solid rgba(255, 255, 255, 0.7);
-  box-shadow: 0 16px 34px rgba(31, 46, 65, 0.2);
-  backdrop-filter: blur(5px);
-  animation: panel-enter 300ms ease-out both;
+  box-shadow: 0 8px 16px rgba(31, 46, 65, 0.12);
 }
 
 .hero {
@@ -153,17 +149,7 @@ button {
   font-weight: 700;
   letter-spacing: 0.2px;
   cursor: pointer;
-  transition: transform 100ms ease, filter 100ms ease, opacity 100ms ease;
-}
-
-button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: brightness(1.02);
-}
-
-button:active:not(:disabled) {
-  transform: translateY(0);
-  filter: brightness(0.98);
+  transition: opacity 100ms ease;
 }
 
 button:disabled {
@@ -189,33 +175,14 @@ button:disabled {
 }
 
 .animate {
-  opacity: 0;
-  transform: translateY(6px);
-  animation: reveal 280ms ease-out forwards;
+  opacity: 1;
+  transform: none;
 }
 
 .a1 { animation-delay: 20ms; }
 .a2 { animation-delay: 70ms; }
 .a3 { animation-delay: 120ms; }
 .a4 { animation-delay: 170ms; }
-
-@keyframes panel-enter {
-  from {
-    opacity: 0;
-    transform: scale(0.985);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes reveal {
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
 
 @media (max-width: 730px) {
   .actions {
