@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Manager</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        width: 600px;
+        text-align: center;
+        display: -webkit-flex;
+        display: flex;
+        -webkit-flex-direction: column;
+        flex-direction: column;
+        -webkit-flex-wrap: nowrap;
+        flex-wrap: nowrap;
+        -webkit-justify-content: space-between;
+        justify-content: space-between;
+        -webkit-align-content: center;
+        align-content: center;
+        -webkit-align-items: center;
+        align-items: center;
+      }
+      body * {
+        -webkit-align-self: stretch;
+        align-self: stretch;
+        margin: 5px 0;
+      }
+      textarea {
+        height: 200px;
+        font-family: monospace;
+        box-sizing: border-box;
+        white-space: pre;
+        overflow-x: auto;
+        width: 100%;
+        resize: vertical;
+      }
+    </style>
+    <script type="text/javascript" src="popup.js"></script>
+  </head>
+  <body>
+    <h3>Manager</h3>
+    <textarea autofocus id="input"></textarea>
+    <div>
+      <button id="open">OPEN</button>
+      <button id="tabs">TABS</button>
+      <button id="clear">CLEAR</button>
+    </div>
+  </body>
+</html>

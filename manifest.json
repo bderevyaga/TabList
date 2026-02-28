@@ -1,0 +1,24 @@
+{
+    "manifest_version": 3,
+    "name": "Manager",
+    "version": "1.0",
+    "description": "Manage and update SameSite attribute for cookies.",
+    "permissions": [
+      "activeTab",
+      "storage",
+      "tabs"
+    ],
+    "background": {
+      "service_worker": "background.js"
+    },
+    "action": {
+      "default_popup": "popup.html"
+    },
+    "content_security_policy": {
+      "extension_pages": "script-src 'self'; object-src 'self'"
+    },
+    "host_permissions": [
+      "http://*/*",
+      "https://*/*"
+    ]
+  }
