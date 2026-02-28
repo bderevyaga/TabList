@@ -1,41 +1,41 @@
-class UrlParser {
-  constructor(urlPattern, httpPattern) {
-    this.urlPattern = urlPattern;
-    this.httpPattern = httpPattern;
+class UrlListParser {
+  constructor(urlMatchPattern, httpUrlPattern) {
+    this.urlMatchPattern = urlMatchPattern;
+    this.httpUrlPattern = httpUrlPattern;
   }
 
-  extract(text) {
-    return text.match(this.urlPattern) || [];
+  extractUrls(text) {
+    return text.match(this.urlMatchPattern) || [];
   }
 
-  extractUnique(text) {
-    return this.makeUnique(this.extract(text));
+  extractUniqueUrls(text) {
+    return this.getUniqueValues(this.extractUrls(text));
   }
 
   countNonEmptyLines(text) {
     return text.split(/\r?\n/).filter((line) => line.trim().length > 0).length;
   }
 
-  fromTabs(tabs) {
-    const urls = tabs.map((tab) => tab.url || '').filter((url) => this.httpPattern.test(url));
-    return this.makeUnique(urls);
+  extractHttpUrlsFromTabs(tabs) {
+    const urls = tabs.map((tab) => tab.url || '').filter((url) => this.httpUrlPattern.test(url));
+    return this.getUniqueValues(urls);
   }
 
-  makeUnique(values) {
+  getUniqueValues(values) {
     return [...new Set(values)];
   }
 }
 
-class TextFormatter {
+class PopupTextFormatter {
   pluralize(count, word) {
     return `${count} ${word}${count === 1 ? '' : 's'}`;
   }
 
-  linkBadge(count) {
+  formatLinkCount(count) {
     return this.pluralize(count, 'link');
   }
 
-  defaultSummary(urlCount, lineCount) {
+  formatDefaultSummary(urlCount, lineCount) {
     if (lineCount === 0) {
       return 'Add URLs or capture your current tabs.';
     }
@@ -43,57 +43,57 @@ class TextFormatter {
     return `${this.pluralize(urlCount, 'valid URL')} across ${this.pluralize(lineCount, 'line')}.`;
   }
 
-  capturedTabs(count) {
+  formatCapturedTabs(count) {
     return `Captured ${this.pluralize(count, 'tab')}.`;
   }
 
-  openingProgress(openedCount, totalCount) {
+  formatOpeningProgress(openedCount, totalCount) {
     return `Opening ${openedCount}/${totalCount} tabs...`;
   }
 
-  openingTabs() {
+  formatOpeningTabs() {
     return 'Opening tabs...';
   }
 
-  openedTabs(count) {
+  formatOpenedTabs(count) {
     return `Opened ${this.pluralize(count, 'tab')}.`;
   }
 
-  copiedToClipboard() {
+  formatCopiedToClipboard() {
     return 'Copied to clipboard.';
   }
 
-  closingTabs(count) {
+  formatClosingTabs(count) {
     return `Closing ${this.pluralize(count, 'tab')}...`;
   }
 
-  closedTabs(count) {
+  formatClosedTabs(count) {
     return `Closed ${this.pluralize(count, 'tab')}.`;
   }
 }
 
-class StorageService {
-  constructor(storageArea, key) {
+class SavedLinksStorage {
+  constructor(storageArea, storageKey) {
     this.storageArea = storageArea;
-    this.key = key;
+    this.storageKey = storageKey;
   }
 
-  loadText() {
+  loadLinksText() {
     return new Promise((resolve, reject) => {
-      this.storageArea.get([this.key], (result) => {
+      this.storageArea.get([this.storageKey], (result) => {
         const error = chrome.runtime.lastError;
         if (error) {
           reject(new Error(error.message));
           return;
         }
-        resolve(typeof result[this.key] === 'string' ? result[this.key] : '');
+        resolve(typeof result[this.storageKey] === 'string' ? result[this.storageKey] : '');
       });
     });
   }
 
-  saveText(text) {
+  saveLinksText(text) {
     return new Promise((resolve, reject) => {
-      this.storageArea.set({ [this.key]: text }, () => {
+      this.storageArea.set({ [this.storageKey]: text }, () => {
         const error = chrome.runtime.lastError;
         if (error) {
           reject(new Error(error.message));
@@ -104,9 +104,9 @@ class StorageService {
     });
   }
 
-  clearText() {
+  clearLinksText() {
     return new Promise((resolve, reject) => {
-      this.storageArea.remove([this.key], () => {
+      this.storageArea.remove([this.storageKey], () => {
         const error = chrome.runtime.lastError;
         if (error) {
           reject(new Error(error.message));
@@ -118,14 +118,14 @@ class StorageService {
   }
 }
 
-class TabService {
-  constructor(tabsApi) {
-    this.tabsApi = tabsApi;
+class BrowserTabsService {
+  constructor(browserTabsApi) {
+    this.browserTabsApi = browserTabsApi;
   }
 
-  getAllTabs() {
+  getOpenTabs() {
     return new Promise((resolve, reject) => {
-      this.tabsApi.query({}, (tabs) => {
+      this.browserTabsApi.query({}, (tabs) => {
         const error = chrome.runtime.lastError;
         if (error) {
           reject(new Error(error.message));
@@ -136,9 +136,9 @@ class TabService {
     });
   }
 
-  openInactiveTab(url) {
+  openBackgroundTab(url) {
     return new Promise((resolve, reject) => {
-      this.tabsApi.create({ url: url, active: false }, () => {
+      this.browserTabsApi.create({ url: url, active: false }, () => {
         const error = chrome.runtime.lastError;
         if (error) {
           reject(new Error(error.message));
@@ -149,13 +149,13 @@ class TabService {
     });
   }
 
-  closeTabs(tabIds) {
+  closeTabsByIds(tabIds) {
     if (!tabIds.length) {
       return Promise.resolve();
     }
 
     return new Promise((resolve, reject) => {
-      this.tabsApi.remove(tabIds, () => {
+      this.browserTabsApi.remove(tabIds, () => {
         const error = chrome.runtime.lastError;
         if (error) {
           reject(new Error(error.message));
@@ -167,19 +167,19 @@ class TabService {
   }
 }
 
-class BatchTabOpener {
-  constructor(tabService, options) {
-    this.tabService = tabService;
+class TabsBatchOpener {
+  constructor(tabsService, options) {
+    this.tabsService = tabsService;
     this.batchSize = options.batchSize;
     this.batchDelayMs = options.batchDelayMs;
-    this.wait = options.wait;
+    this.delayFn = options.delayFn;
   }
 
-  async open(urls, onProgress) {
-    const existingTabs = await this.tabService.getAllTabs();
+  async openUrls(urls, onProgress) {
+    const openTabs = await this.tabsService.getOpenTabs();
     const tabsByUrl = new Map();
 
-    existingTabs.forEach((tab) => {
+    openTabs.forEach((tab) => {
       if (!tab.url || typeof tab.id !== 'number') {
         return;
       }
@@ -193,40 +193,40 @@ class BatchTabOpener {
       });
     });
 
-    const totalToOpen = urls.reduce((count, url) => {
+    const totalTabsToOpen = urls.reduce((count, url) => {
       const hasActiveTab = (tabsByUrl.get(url) || []).some((tab) => tab.isActive);
       return count + (hasActiveTab ? 0 : 1);
     }, 0);
     let openedCount = 0;
 
     for (let index = 0; index < urls.length; index += this.batchSize) {
-      const batch = urls.slice(index, index + this.batchSize);
-      const openedInBatch = await Promise.all(batch.map(async (url) => {
-        const existingTabsForUrl = tabsByUrl.get(url) || [];
-        const closableIds = existingTabsForUrl
+      const urlBatch = urls.slice(index, index + this.batchSize);
+      const openedPerBatch = await Promise.all(urlBatch.map(async (url) => {
+        const tabsWithSameUrl = tabsByUrl.get(url) || [];
+        const inactiveTabIds = tabsWithSameUrl
           .filter((tab) => !tab.isActive)
           .map((tab) => tab.id);
-        const hasActiveTab = existingTabsForUrl.some((tab) => tab.isActive);
+        const hasActiveTab = tabsWithSameUrl.some((tab) => tab.isActive);
 
-        if (closableIds.length) {
-          await this.tabService.closeTabs(closableIds);
+        if (inactiveTabIds.length) {
+          await this.tabsService.closeTabsByIds(inactiveTabIds);
         }
 
         if (!hasActiveTab) {
-          await this.tabService.openInactiveTab(url);
+          await this.tabsService.openBackgroundTab(url);
           return 1;
         }
         return 0;
       }));
 
-      openedCount += openedInBatch.reduce((sum, value) => sum + value, 0);
+      openedCount += openedPerBatch.reduce((sum, value) => sum + value, 0);
 
-      if (totalToOpen > 0) {
-        onProgress(openedCount, totalToOpen);
+      if (totalTabsToOpen > 0) {
+        onProgress(openedCount, totalTabsToOpen);
       }
 
       if (index + this.batchSize < urls.length) {
-        await this.wait(this.batchDelayMs);
+        await this.delayFn(this.batchDelayMs);
       }
     }
 
@@ -234,285 +234,310 @@ class BatchTabOpener {
   }
 }
 
-class PopupView {
+class PopupDomView {
   constructor(documentRef) {
-    this.input = documentRef.getElementById('input');
-    this.copy = documentRef.getElementById('copy');
-    this.open = documentRef.getElementById('open');
-    this.tabs = documentRef.getElementById('tabs');
-    this.clear = documentRef.getElementById('clear');
-    this.closeAll = documentRef.getElementById('close-all');
-    this.status = documentRef.getElementById('status');
-    this.summary = documentRef.getElementById('summary');
+    this.linkListInputField = documentRef.getElementById('link-list-input');
+    this.copyLinksButton = documentRef.getElementById('copy-links-button');
+    this.openLinksButton = documentRef.getElementById('open-links-button');
+    this.captureTabsButton = documentRef.getElementById('capture-tabs-button');
+    this.clearLinksButton = documentRef.getElementById('clear-links-button');
+    this.closeListedButton = documentRef.getElementById('close-listed-button');
+    this.linkCountLabel = documentRef.getElementById('link-count');
+    this.statusMessageLabel = documentRef.getElementById('status-message');
   }
 
-  bindHandlers(handlers) {
-    this.tabs.addEventListener('click', handlers.onCaptureTabs);
-    this.input.addEventListener('input', handlers.onInputChanged);
-    this.copy.addEventListener('click', handlers.onCopy);
-    this.clear.addEventListener('click', handlers.onClear);
-    this.closeAll.addEventListener('click', handlers.onCloseAllTabs);
-    this.open.addEventListener('click', handlers.onOpen);
+  bindUiHandlers(handlers) {
+    this.captureTabsButton.addEventListener('click', handlers.onCaptureTabsClick);
+    this.linkListInputField.addEventListener('input', handlers.onInputChange);
+    this.copyLinksButton.addEventListener('click', handlers.onCopyClick);
+    this.clearLinksButton.addEventListener('click', handlers.onClearClick);
+    this.closeListedButton.addEventListener('click', handlers.onCloseListedTabsClick);
+    this.openLinksButton.addEventListener('click', handlers.onOpenLinksClick);
   }
 
-  getInputText() {
-    return this.input.value;
+  getLinksText() {
+    return this.linkListInputField.value;
   }
 
-  setInputText(text) {
-    this.input.value = text;
+  setLinksText(text) {
+    this.linkListInputField.value = text;
   }
 
-  focusInput() {
-    this.input.focus();
+  focusLinksInput() {
+    this.linkListInputField.focus();
   }
 
-  setStatus(text) {
-    this.status.textContent = text;
+  setLinkCountText(text) {
+    this.linkCountLabel.textContent = text;
   }
 
-  setSummary(text) {
-    this.summary.textContent = text;
+  setStatusMessageText(text) {
+    this.statusMessageLabel.textContent = text;
   }
 
-  setControlsState(state) {
-    this.open.disabled = state.isBusy || !state.hasUrls;
-    this.tabs.disabled = state.isBusy;
-    this.copy.disabled = state.isBusy || !state.hasText;
-    this.clear.disabled = state.isBusy || !state.hasText;
-    this.closeAll.disabled = state.isBusy;
-    this.input.disabled = state.isBusy;
+  updateControlsState(controlsState) {
+    this.openLinksButton.disabled = controlsState.isBusy || !controlsState.hasUrls;
+    this.captureTabsButton.disabled = controlsState.isBusy;
+    this.copyLinksButton.disabled = controlsState.isBusy || !controlsState.hasText;
+    this.clearLinksButton.disabled = controlsState.isBusy || !controlsState.hasText;
+    this.closeListedButton.disabled = controlsState.isBusy;
+    this.linkListInputField.disabled = controlsState.isBusy;
   }
 }
 
-class PopupController {
+class PopupUiController {
   constructor(dependencies, options) {
-    this.view = dependencies.view;
-    this.parser = dependencies.parser;
-    this.formatter = dependencies.formatter;
-    this.storage = dependencies.storage;
-    this.tabService = dependencies.tabService;
-    this.tabOpener = dependencies.tabOpener;
-    this.copyText = dependencies.copyText;
-    this.temporarySummaryMs = options.temporarySummaryMs;
+    this.popupView = dependencies.popupView;
+    this.urlParser = dependencies.urlParser;
+    this.textFormatter = dependencies.textFormatter;
+    this.savedLinksStorage = dependencies.savedLinksStorage;
+    this.tabsService = dependencies.tabsService;
+    this.tabsBatchOpener = dependencies.tabsBatchOpener;
+    this.writeClipboardText = dependencies.writeClipboardText;
+    this.temporaryStatusMs = options.temporaryStatusMs;
     this.autosaveDelayMs = options.autosaveDelayMs;
 
-    this.state = {
-      isOpening: false,
-      isClosingAll: false,
-      summaryTimer: null,
-      saveTimer: null
+    this.uiState = {
+      isOpeningLinks: false,
+      isClosingListedTabs: false,
+      statusTimer: null,
+      autosaveTimer: null
     };
   }
 
-  async init() {
-    this.view.bindHandlers({
-      onCaptureTabs: () => this.handleCaptureTabs(),
-      onInputChanged: () => this.handleInputChanged(),
-      onCopy: () => this.handleCopy(),
-      onClear: () => this.handleClear(),
-      onCloseAllTabs: () => this.handleCloseAllTabs(),
-      onOpen: () => this.handleOpen()
+  async initialize() {
+    this.popupView.bindUiHandlers({
+      onCaptureTabsClick: () => this.handleCaptureTabsClick(),
+      onInputChange: () => this.handleInputChange(),
+      onCopyClick: () => this.handleCopyClick(),
+      onClearClick: () => this.handleClearClick(),
+      onCloseListedTabsClick: () => this.handleCloseListedTabsClick(),
+      onOpenLinksClick: () => this.handleOpenLinksClick()
     });
 
-    let savedText = '';
-    let loadFailed = false;
+    let savedLinksText = '';
+    let isLoadFailed = false;
     try {
-      savedText = await this.storage.loadText();
+      savedLinksText = await this.savedLinksStorage.loadLinksText();
     } catch (_error) {
-      loadFailed = true;
+      isLoadFailed = true;
     }
 
-    this.view.setInputText(savedText);
-    this.render(false);
-    if (loadFailed) {
-      this.showTemporarySummary('Failed to load saved links.');
+    this.popupView.setLinksText(savedLinksText);
+    this.renderUi(false);
+    if (isLoadFailed) {
+      this.showTemporaryStatus('Failed to load saved links.');
     }
   }
 
-  render(preserveSummary) {
-    const text = this.view.getInputText();
-    const urls = this.parser.extractUnique(text);
-    const lineCount = this.parser.countNonEmptyLines(text);
+  renderUi(preserveStatusMessage) {
+    const linksText = this.popupView.getLinksText();
+    const uniqueUrls = this.urlParser.extractUniqueUrls(linksText);
+    const nonEmptyLineCount = this.urlParser.countNonEmptyLines(linksText);
 
-    this.view.setStatus(this.formatter.linkBadge(urls.length));
-    if (!preserveSummary) {
-      this.view.setSummary(this.formatter.defaultSummary(urls.length, lineCount));
+    this.popupView.setLinkCountText(this.textFormatter.formatLinkCount(uniqueUrls.length));
+    if (!preserveStatusMessage) {
+      this.popupView.setStatusMessageText(
+        this.textFormatter.formatDefaultSummary(uniqueUrls.length, nonEmptyLineCount)
+      );
     }
 
-    this.view.setControlsState({
-      isBusy: this.state.isOpening || this.state.isClosingAll,
-      hasUrls: urls.length > 0,
-      hasText: text.trim().length > 0
+    this.popupView.updateControlsState({
+      isBusy: this.uiState.isOpeningLinks || this.uiState.isClosingListedTabs,
+      hasUrls: uniqueUrls.length > 0,
+      hasText: linksText.trim().length > 0
     });
 
-    return urls;
+    return uniqueUrls;
   }
 
-  clearSummaryTimer() {
-    if (this.state.summaryTimer) {
-      clearTimeout(this.state.summaryTimer);
-      this.state.summaryTimer = null;
+  clearStatusTimer() {
+    if (this.uiState.statusTimer) {
+      clearTimeout(this.uiState.statusTimer);
+      this.uiState.statusTimer = null;
     }
   }
 
-  clearSaveTimer() {
-    if (this.state.saveTimer) {
-      clearTimeout(this.state.saveTimer);
-      this.state.saveTimer = null;
+  clearAutosaveTimer() {
+    if (this.uiState.autosaveTimer) {
+      clearTimeout(this.uiState.autosaveTimer);
+      this.uiState.autosaveTimer = null;
     }
   }
 
-  showTemporarySummary(message) {
-    this.clearSummaryTimer();
-    this.view.setSummary(message);
-    this.state.summaryTimer = setTimeout(() => {
-      this.state.summaryTimer = null;
-      this.render(false);
-    }, this.temporarySummaryMs);
+  isAnyTabOperationActive() {
+    return this.uiState.isOpeningLinks || this.uiState.isClosingListedTabs;
+  }
+
+  prepareForUserAction(options = {}) {
+    const shouldClearAutosave = options.shouldClearAutosave || false;
+    this.clearStatusTimer();
+    if (shouldClearAutosave) {
+      this.clearAutosaveTimer();
+    }
+  }
+
+  async getOpenTabsOrShowError() {
+    try {
+      return await this.tabsService.getOpenTabs();
+    } catch (_error) {
+      this.showTemporaryStatus('Failed to read open tabs.');
+      return null;
+    }
+  }
+
+  async runWithBusyState(stateKey, taskFn) {
+    this.uiState[stateKey] = true;
+    this.renderUi(true);
+    try {
+      return await taskFn();
+    } finally {
+      this.uiState[stateKey] = false;
+      this.renderUi(true);
+    }
+  }
+
+  showTemporaryStatus(message) {
+    this.clearStatusTimer();
+    this.popupView.setStatusMessageText(message);
+    this.uiState.statusTimer = setTimeout(() => {
+      this.uiState.statusTimer = null;
+      this.renderUi(false);
+    }, this.temporaryStatusMs);
   }
 
   scheduleAutosave() {
-    this.clearSaveTimer();
-    const text = this.view.getInputText();
-    this.state.saveTimer = setTimeout(async () => {
-      this.state.saveTimer = null;
+    this.clearAutosaveTimer();
+    const linksText = this.popupView.getLinksText();
+    this.uiState.autosaveTimer = setTimeout(async () => {
+      this.uiState.autosaveTimer = null;
       try {
-        await this.storage.saveText(text);
+        await this.savedLinksStorage.saveLinksText(linksText);
       } catch (_error) {
-        this.showTemporarySummary('Failed to save links.');
+        this.showTemporaryStatus('Failed to save links.');
       }
     }, this.autosaveDelayMs);
   }
 
-  handleInputChanged() {
-    this.clearSummaryTimer();
+  handleInputChange() {
+    this.prepareForUserAction();
     this.scheduleAutosave();
-    this.render(false);
+    this.renderUi(false);
   }
 
-  async handleCaptureTabs() {
-    if (this.state.isOpening) {
+  async handleCaptureTabsClick() {
+    if (this.uiState.isOpeningLinks) {
       return;
     }
 
-    this.clearSummaryTimer();
-    this.clearSaveTimer();
+    this.prepareForUserAction({ shouldClearAutosave: true });
+    const openTabs = await this.getOpenTabsOrShowError();
+    if (!openTabs) {
+      return;
+    }
 
-    let tabs = [];
+    const capturedUrls = this.urlParser.extractHttpUrlsFromTabs(openTabs);
+
+    this.popupView.setLinksText(capturedUrls.join('\n'));
     try {
-      tabs = await this.tabService.getAllTabs();
+      await this.savedLinksStorage.saveLinksText(this.popupView.getLinksText());
     } catch (_error) {
-      this.showTemporarySummary('Failed to read open tabs.');
+      this.renderUi(false);
+      this.showTemporaryStatus('Tabs captured but failed to save.');
       return;
     }
-
-    const urls = this.parser.fromTabs(tabs);
-
-    this.view.setInputText(urls.join('\n'));
-    try {
-      await this.storage.saveText(this.view.getInputText());
-    } catch (_error) {
-      this.render(false);
-      this.showTemporarySummary('Tabs captured but failed to save.');
-      return;
-    }
-    this.render(false);
-    this.showTemporarySummary(this.formatter.capturedTabs(urls.length));
+    this.renderUi(false);
+    this.showTemporaryStatus(this.textFormatter.formatCapturedTabs(capturedUrls.length));
   }
 
-  async handleClear() {
-    if (this.state.isOpening) {
+  async handleClearClick() {
+    if (this.uiState.isOpeningLinks) {
       return;
     }
 
-    this.clearSummaryTimer();
-    this.clearSaveTimer();
+    this.prepareForUserAction({ shouldClearAutosave: true });
     try {
-      await this.storage.clearText();
+      await this.savedLinksStorage.clearLinksText();
     } catch (_error) {
-      this.showTemporarySummary('Failed to clear links.');
+      this.showTemporaryStatus('Failed to clear links.');
       return;
     }
-    this.view.setInputText('');
-    this.view.focusInput();
-    this.render(false);
+    this.popupView.setLinksText('');
+    this.popupView.focusLinksInput();
+    this.renderUi(false);
   }
 
-  async handleCopy() {
-    if (this.state.isOpening) {
+  async handleCopyClick() {
+    if (this.uiState.isOpeningLinks) {
       return;
     }
 
-    this.clearSummaryTimer();
-    const text = this.view.getInputText();
-    if (!text.trim()) {
-      this.showTemporarySummary('Nothing to copy.');
+    this.prepareForUserAction();
+    const linksText = this.popupView.getLinksText();
+    if (!linksText.trim()) {
+      this.showTemporaryStatus('Nothing to copy.');
       return;
     }
 
     try {
-      await this.copyText(text);
-      this.showTemporarySummary(this.formatter.copiedToClipboard());
+      await this.writeClipboardText(linksText);
+      this.showTemporaryStatus(this.textFormatter.formatCopiedToClipboard());
     } catch (_error) {
-      this.showTemporarySummary('Failed to copy text.');
+      this.showTemporaryStatus('Failed to copy text.');
     }
   }
 
-  async handleOpen() {
-    if (this.state.isOpening || this.state.isClosingAll) {
+  async handleOpenLinksClick() {
+    if (this.isAnyTabOperationActive()) {
       return;
     }
 
-    this.clearSummaryTimer();
-    const urls = this.render(false);
-    if (!urls.length) {
+    this.prepareForUserAction();
+    const urlsToOpen = this.renderUi(false);
+    if (!urlsToOpen.length) {
       return;
     }
 
-    this.state.isOpening = true;
-    this.render(true);
-    this.view.setSummary(this.formatter.openingTabs());
+    const completionMessage = await this.runWithBusyState('isOpeningLinks', async () => {
+      this.popupView.setStatusMessageText(this.textFormatter.formatOpeningTabs());
+      try {
+        const openedCount = await this.tabsBatchOpener.openUrls(
+          urlsToOpen,
+          (openedCountValue, totalCount) => {
+            this.popupView.setStatusMessageText(
+              this.textFormatter.formatOpeningProgress(openedCountValue, totalCount)
+            );
+          }
+        );
+        return this.textFormatter.formatOpenedTabs(openedCount);
+      } catch (_error) {
+        return 'Failed to open tabs.';
+      }
+    });
 
-    let finishMessage = null;
-    try {
-      const openedCount = await this.tabOpener.open(urls, (openedCountValue, totalCount) => {
-        this.view.setSummary(this.formatter.openingProgress(openedCountValue, totalCount));
-      });
-      finishMessage = this.formatter.openedTabs(openedCount);
-    } catch (_error) {
-      finishMessage = 'Failed to open tabs.';
-    } finally {
-      this.state.isOpening = false;
-      this.render(true);
-    }
-
-    this.showTemporarySummary(finishMessage);
+    this.showTemporaryStatus(completionMessage);
   }
 
-  async handleCloseAllTabs() {
-    if (this.state.isOpening || this.state.isClosingAll) {
+  async handleCloseListedTabsClick() {
+    if (this.isAnyTabOperationActive()) {
       return;
     }
 
-    this.clearSummaryTimer();
+    this.prepareForUserAction();
 
-    const listedUrls = this.parser.extractUnique(this.view.getInputText());
+    const listedUrls = this.urlParser.extractUniqueUrls(this.popupView.getLinksText());
     if (!listedUrls.length) {
-      this.showTemporarySummary('No URLs in the list.');
+      this.showTemporaryStatus('No URLs in the list.');
       return;
     }
 
-    let tabs = [];
-    try {
-      tabs = await this.tabService.getAllTabs();
-    } catch (_error) {
-      this.showTemporarySummary('Failed to read open tabs.');
+    const openTabs = await this.getOpenTabsOrShowError();
+    if (!openTabs) {
       return;
     }
 
     const listedUrlSet = new Set(listedUrls);
-    const tabIds = tabs
+    const listedTabIds = openTabs
       .filter((tab) => (
         typeof tab.id === 'number'
         && !tab.active
@@ -520,92 +545,87 @@ class PopupController {
         && listedUrlSet.has(tab.url)
       ))
       .map((tab) => tab.id);
-    if (!tabIds.length) {
-      this.showTemporarySummary('No listed tabs to close.');
+    if (!listedTabIds.length) {
+      this.showTemporaryStatus('No listed tabs to close.');
       return;
     }
 
-    this.state.isClosingAll = true;
-    this.render(true);
-    this.view.setSummary(this.formatter.closingTabs(tabIds.length));
+    const completionMessage = await this.runWithBusyState('isClosingListedTabs', async () => {
+      this.popupView.setStatusMessageText(this.textFormatter.formatClosingTabs(listedTabIds.length));
+      try {
+        await this.tabsService.closeTabsByIds(listedTabIds);
+        return this.textFormatter.formatClosedTabs(listedTabIds.length);
+      } catch (_error) {
+        return 'Failed to close tabs.';
+      }
+    });
 
-    let finishMessage = null;
-    try {
-      await this.tabService.closeTabs(tabIds);
-      finishMessage = this.formatter.closedTabs(tabIds.length);
-    } catch (_error) {
-      finishMessage = 'Failed to close tabs.';
-    } finally {
-      this.state.isClosingAll = false;
-      this.render(true);
-    }
-
-    this.showTemporarySummary(finishMessage);
+    this.showTemporaryStatus(completionMessage);
   }
 }
 
-const createDelay = (milliseconds) => new Promise((resolve) => {
+const createTimeoutDelay = (milliseconds) => new Promise((resolve) => {
   setTimeout(resolve, milliseconds);
 });
 
-const createClipboardWriter = (documentRef, navigatorRef) => {
+const createClipboardTextWriter = (documentRef, navigatorRef) => {
   const clipboard = navigatorRef.clipboard;
   if (clipboard && typeof clipboard.writeText === 'function') {
     return (text) => clipboard.writeText(text);
   }
 
   return async (text) => {
-    const helper = documentRef.createElement('textarea');
-    helper.value = text;
-    helper.setAttribute('readonly', '');
-    helper.style.position = 'fixed';
-    helper.style.top = '-1000px';
-    helper.style.left = '-1000px';
-    documentRef.body.appendChild(helper);
+    const clipboardFallbackTextarea = documentRef.createElement('textarea');
+    clipboardFallbackTextarea.value = text;
+    clipboardFallbackTextarea.setAttribute('readonly', '');
+    clipboardFallbackTextarea.style.position = 'fixed';
+    clipboardFallbackTextarea.style.top = '-1000px';
+    clipboardFallbackTextarea.style.left = '-1000px';
+    documentRef.body.appendChild(clipboardFallbackTextarea);
 
-    let copied = false;
+    let didCopy = false;
     try {
-      helper.focus();
-      helper.select();
-      copied = documentRef.execCommand('copy');
+      clipboardFallbackTextarea.focus();
+      clipboardFallbackTextarea.select();
+      didCopy = documentRef.execCommand('copy');
     } finally {
-      helper.remove();
+      clipboardFallbackTextarea.remove();
     }
 
-    if (!copied) {
+    if (!didCopy) {
       throw new Error('Copy command failed');
     }
   };
 };
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const parser = new UrlParser(/https?:\/\/[^\s]+/g, /^https?:\/\//);
-  const formatter = new TextFormatter();
-  const storage = new StorageService(chrome.storage.local, 'text');
-  const tabService = new TabService(chrome.tabs);
-  const copyText = createClipboardWriter(document, navigator);
-  const tabOpener = new BatchTabOpener(tabService, {
+  const urlParser = new UrlListParser(/https?:\/\/[^\s]+/g, /^https?:\/\//);
+  const textFormatter = new PopupTextFormatter();
+  const savedLinksStorage = new SavedLinksStorage(chrome.storage.local, 'text');
+  const tabsService = new BrowserTabsService(chrome.tabs);
+  const writeClipboardText = createClipboardTextWriter(document, navigator);
+  const tabsBatchOpener = new TabsBatchOpener(tabsService, {
     batchSize: 6,
     batchDelayMs: 120,
-    wait: createDelay
+    delayFn: createTimeoutDelay
   });
 
-  const view = new PopupView(document);
-  const controller = new PopupController(
+  const popupView = new PopupDomView(document);
+  const popupController = new PopupUiController(
     {
-      view: view,
-      parser: parser,
-      formatter: formatter,
-      storage: storage,
-      tabService: tabService,
-      tabOpener: tabOpener,
-      copyText: copyText
+      popupView: popupView,
+      urlParser: urlParser,
+      textFormatter: textFormatter,
+      savedLinksStorage: savedLinksStorage,
+      tabsService: tabsService,
+      tabsBatchOpener: tabsBatchOpener,
+      writeClipboardText: writeClipboardText
     },
     {
-      temporarySummaryMs: 1600,
+      temporaryStatusMs: 1600,
       autosaveDelayMs: 350
     }
   );
 
-  await controller.init();
+  await popupController.initialize();
 });

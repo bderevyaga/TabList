@@ -2,35 +2,35 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8">
-    <title>TabDock</title>
+    <title>TabList</title>
     <link rel="stylesheet" href="./popup.css">
     <script type="text/javascript" src="./popup.js"></script>
   </head>
   <body>
-    <main class="panel">
-      <header class="hero animate a1">
+    <main class="popup-shell">
+      <header class="popup-header reveal reveal-step-1">
         <div>
-          <h1>TabDock</h1>
-          <p class="subtitle">Save links, capture open tabs, and reopen them in one click.</p>
+          <h1>TabList</h1>
+          <p class="popup-subtitle">Save, open, and manage tab links in one list.</p>
         </div>
-        <span id="status" class="badge" role="status" aria-live="polite" aria-atomic="true">0 links</span>
+        <span id="link-count" class="link-count-badge" role="status" aria-live="polite" aria-atomic="true">0 links</span>
       </header>
-      <div class="input-head animate a2">
-        <label for="input" class="label">Link List</label>
-        <div class="input-actions">
-          <button id="copy" type="button" aria-label="Copy link list to clipboard">Copy</button>
-          <button id="clear" type="button" aria-label="Clear saved links">Clear</button>
+      <div class="link-list-header reveal reveal-step-2">
+        <label for="link-list-input" class="section-label">Link List</label>
+        <div class="link-list-tools">
+          <button id="copy-links-button" type="button" aria-label="Copy link list to clipboard">Copy</button>
+          <button id="clear-links-button" type="button" aria-label="Clear saved links">Clear</button>
         </div>
       </div>
-      <textarea autofocus id="input" aria-label="Link list input" placeholder="https://example.com&#10;https://docs.example.com"></textarea>
-      <div class="meta animate a3">
-        <span id="summary" aria-live="polite" aria-atomic="true">Add URLs or capture your current tabs.</span>
-        <span class="autosave">Autosave on</span>
+      <textarea autofocus id="link-list-input" aria-label="Link list input" placeholder="https://example.com&#10;https://docs.example.com"></textarea>
+      <div class="popup-meta reveal reveal-step-3">
+        <span id="status-message" aria-live="polite" aria-atomic="true">Add URLs or capture your current tabs.</span>
+        <span class="autosave-indicator">Autosave on</span>
       </div>
-      <div class="actions animate a4">
-        <button id="open" type="button" aria-label="Open links from list">Open Links</button>
-        <button id="tabs" type="button" aria-label="Capture current tabs">Capture Tabs</button>
-        <button id="close-all" type="button" aria-label="Close tabs from list">Close Listed</button>
+      <div class="primary-actions reveal reveal-step-4">
+        <button id="open-links-button" type="button" aria-label="Open links from list">Open Links</button>
+        <button id="capture-tabs-button" type="button" aria-label="Capture current tabs">Capture Tabs</button>
+        <button id="close-listed-button" type="button" aria-label="Close tabs from list">Close Listed</button>
       </div>
     </main>
   </body>

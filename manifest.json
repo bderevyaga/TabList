@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
-    "name": "TabDock",
+    "name": "TabList",
     "version": "1.0",
-    "description": "Save, manage, and reopen URL lists from your browser tabs.",
+    "description": "Save, open, and manage tab links in one list.",
     "permissions": [
       "storage",
       "tabs"
