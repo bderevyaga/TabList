@@ -1,43 +1,53 @@
-import { UrlListParser } from './parsers/url-list-parser.js';
-import { PopupTextFormatter } from './formatters/popup-text-formatter.js';
-import { SavedLinksStorage } from './storage/saved-links-storage.js';
-import { BrowserTabsService } from './services/browser-tabs-service.js';
-import { TabsBatchOpener } from './services/tabs-batch-opener.js';
-import { PopupDomView } from './view/popup-dom-view.js';
-import { PopupUiController } from './controllers/popup-ui-controller.js';
-import { createTimeoutDelay } from './utils/create-timeout-delay.js';
-import { createClipboardTextWriter } from './utils/create-clipboard-text-writer.js';
+import { UrlParser } from './parsers/url-parser.js';
+import { Text } from './formatters/text.js';
+import { TextStore } from './storage/text-store.js';
+import { TabsService } from './services/tabs-service.js';
+import { UrlOpener } from './services/url-opener.js';
+import { View } from './view/view.js';
+import { Controller } from './controllers/controller.js';
+import { delay } from './utils/delay.js';
+import { createClipboardWriter } from './utils/create-clipboard-writer.js';
 
+/**
+ * Bootstraps popup dependencies and starts controller lifecycle once DOM is ready.
+ */
 document.addEventListener('DOMContentLoaded', async () => {
-  const urlParser = new UrlListParser(/https?:\/\/[^\s]+/g, /^https?:\/\//);
-  const textFormatter = new PopupTextFormatter();
-  const savedLinksStorage = new SavedLinksStorage(chrome.storage.local, 'text');
-  const captureFilterStorage = new SavedLinksStorage(chrome.storage.local, 'captureFilter');
-  const tabsService = new BrowserTabsService(chrome.tabs);
-  const writeClipboardText = createClipboardTextWriter(document, navigator);
-  const tabsBatchOpener = new TabsBatchOpener(tabsService, {
+  /**
+   * URL extraction config:
+   * - first regex captures URL-like tokens from free-form text
+   * - second regex validates tab URLs to keep HTTP(S) only
+   */
+  const parser = new UrlParser(/https?:\/\/[^\s]+/g, /^https?:\/\//);
+  const text = new Text();
+  const textStore = new TextStore(chrome.storage.local, 'text');
+  const filterStore = new TextStore(chrome.storage.local, 'filter');
+  const tabs = new TabsService(chrome.tabs);
+  const copyText = createClipboardWriter(document, navigator);
+  const opener = new UrlOpener(tabs, {
     batchSize: 6,
     batchDelayMs: 120,
-    delayFn: createTimeoutDelay
+    delayFn: delay
   });
 
-  const popupView = new PopupDomView(document);
-  const popupController = new PopupUiController(
+  // `View` encapsulates all DOM selectors and state rendering.
+  const view = new View(document);
+  // `Controller` connects UI actions with parsing/storage/tab side effects.
+  const controller = new Controller(
     {
-      popupView: popupView,
-      urlParser: urlParser,
-      textFormatter: textFormatter,
-      savedLinksStorage: savedLinksStorage,
-      captureFilterStorage: captureFilterStorage,
-      tabsService: tabsService,
-      tabsBatchOpener: tabsBatchOpener,
-      writeClipboardText: writeClipboardText
+      view: view,
+      parser: parser,
+      text: text,
+      textStore: textStore,
+      filterStore: filterStore,
+      tabs: tabs,
+      opener: opener,
+      copyText: copyText
     },
     {
-      temporaryStatusMs: 1600,
-      autosaveDelayMs: 350
+      statusMs: 1600,
+      saveDelayMs: 350
     }
   );
 
-  await popupController.initialize();
+  await controller.init();
 });
