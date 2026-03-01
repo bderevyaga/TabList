@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <title>TabList</title>
     <link rel="stylesheet" href="./popup.css">
-    <script type="text/javascript" src="./popup.js"></script>
+    <script type="module" src="./popup/main.js"></script>
   </head>
   <body>
     <main class="popup-shell">
@@ -23,6 +23,10 @@
         </div>
       </div>
       <textarea autofocus id="link-list-input" aria-label="Link list input" placeholder="https://example.com&#10;https://docs.example.com"></textarea>
+      <div class="capture-filter reveal reveal-step-3">
+        <label for="capture-filter-input" class="section-label">Capture Filter</label>
+        <input id="capture-filter-input" type="text" aria-label="Filter captured tabs by URL regexp" placeholder="URL regexp, e.g. ^https://docs\\.example\\.com">
+      </div>
       <div class="popup-meta reveal reveal-step-3">
         <span id="status-message" aria-live="polite" aria-atomic="true">Add URLs or capture your current tabs.</span>
         <span class="autosave-indicator">Autosave on</span>

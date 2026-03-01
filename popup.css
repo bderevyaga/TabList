@@ -157,6 +157,31 @@ textarea:focus {
   box-shadow: 0 0 0 3px var(--color-brand-focus-ring);
 }
 
+.capture-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+#capture-filter-input {
+  width: 100%;
+  margin: 0;
+  border: 1px solid var(--color-border-default);
+  border-radius: 10px;
+  padding: 9px 11px;
+  background: var(--color-surface-soft);
+  color: var(--color-text-primary);
+  font-family: "Avenir Next", "Helvetica Neue", "Trebuchet MS", sans-serif;
+  font-size: 12px;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+#capture-filter-input:focus {
+  outline: none;
+  border-color: var(--color-brand-focus);
+  box-shadow: 0 0 0 3px var(--color-brand-focus-ring);
+}
+
 .popup-meta {
   display: flex;
   align-items: center;
