@@ -12,10 +12,10 @@ import { createFailureTracker } from '../utils/create-failure-tracker.js';
  * @property {import('../view/view.js').View} view DOM adapter for reading/writing UI state.
  * @property {import('../parsers/url-parser.js').UrlParser} parser URL parsing and filtering utility.
  * @property {import('../formatters/text.js').Text} text User-facing text formatter.
- * @property {{ get: () => Promise<string>, set: (text: string) => Promise<void>, clear: () => Promise<void> }} textStore Storage for text input value.
- * @property {{ get: () => Promise<string>, set: (text: string) => Promise<void>, clear: () => Promise<void> }} filterStore Storage for capture filter value.
- * @property {{ list: () => Promise<BrowserTab[]>, close: (ids: number[]) => Promise<void> }} tabs Browser tabs service.
- * @property {{ open: (urls: string[], onProgress: (openedCount: number, totalCount: number) => void) => Promise<number> }} opener URL opening orchestrator.
+ * @property {import('../services/tabs-service.js').TabsService} tabs Browser tabs service.
+ * @property {import('../services/url-service.js').UrlService} urlService URL tabs orchestration service.
+ * @property {import('../storage/store.js').Store} textStore Storage for text input value.
+ * @property {import('../storage/store.js').Store} filterStore Storage for filter input value.
  * @property {(text: string) => Promise<void>} copyText Clipboard writer function.
  */
 
@@ -45,7 +45,7 @@ export class Controller {
     this.textStore = deps.textStore;
     this.filterStore = deps.filterStore;
     this.tabs = deps.tabs;
-    this.opener = deps.opener;
+    this.urlService = deps.urlService;
     this.copyText = deps.copyText;
     this.statusMs = options.statusMs;
     this.saveDelayMs = options.saveDelayMs;
@@ -68,7 +68,7 @@ export class Controller {
 
     this.view.bind({
       onCapture: () => this.onCapture(),
-      onInput: onTextChange,
+      onTextInput: onTextChange,
       onFilterInput: onTextChange,
       onCopy: () => this.onCopy(),
       onClear: () => this.onClear(),
@@ -195,6 +195,7 @@ export class Controller {
   flash(message) {
     this.clearStatus();
     this.view.setStatus(message);
+
     this.state.statusTimer = setTimeout(() => {
       this.state.statusTimer = null;
       this.render(false);
@@ -336,7 +337,7 @@ export class Controller {
     const doneMessage = await this.withBusy('opening', async () => {
       this.view.setStatus(this.text.opening());
       try {
-        const opened = await this.opener.open(
+        const opened = await this.urlService.open(
           urls,
           (openedCount, totalCount) => {
             this.view.setStatus(this.text.openingProgress(openedCount, totalCount));
@@ -368,30 +369,16 @@ export class Controller {
       return;
     }
 
-    const tabs = await this.readTabs();
-    if (!tabs) {
-      return;
-    }
-
-    const listedSet = new Set(urls);
-    const listedIds = tabs
-      .filter((tab) => (
-        typeof tab.id === 'number'
-        && !tab.active
-        && typeof tab.url === 'string'
-        && listedSet.has(tab.url)
-      ))
-      .map((tab) => tab.id);
-    if (!listedIds.length) {
-      this.flash(this.text.noTabsToClose());
-      return;
-    }
-
     const doneMessage = await this.withBusy('closing', async () => {
-      this.view.setStatus(this.text.closing(listedIds.length));
+      this.view.setStatus(this.text.closing());
       try {
-        await this.tabs.close(listedIds);
-        return this.text.closed(listedIds.length);
+        const closed = await this.urlService.close(
+          urls,
+          (closedCount, totalCount) => {
+            this.view.setStatus(this.text.closingProgress(closedCount, totalCount));
+          }
+        );
+        return this.text.closed(closed);
       } catch (_error) {
         return this.text.closeError();
       }

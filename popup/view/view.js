@@ -1,7 +1,7 @@
 /**
  * @typedef {Object} ViewHandlers
  * @property {() => void} onCapture Called when the "capture links" button is clicked.
- * @property {() => void} onInput Called when text input content changes.
+ * @property {() => void} onTextInput Called when text input content changes.
  * @property {() => void} onFilterInput Called when filter input content changes.
  * @property {() => void} onCopy Called when the "copy" button is clicked.
  * @property {() => void} onClear Called when the "clear" button is clicked.
@@ -41,7 +41,7 @@ export class View {
    * @returns {void}
    */
   bind(handlers) {
-    this.textInput.addEventListener('input', handlers.onInput);
+    this.textInput.addEventListener('input', handlers.onTextInput);
     this.filterInput.addEventListener('input', handlers.onFilterInput);
 
     this.copyBtn.addEventListener('click', handlers.onCopy);

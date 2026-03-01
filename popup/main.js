@@ -1,11 +1,10 @@
 import { UrlParser } from './parsers/url-parser.js';
 import { Text } from './formatters/text.js';
-import { TextStore } from './storage/text-store.js';
+import { Store } from './storage/store.js';
 import { TabsService } from './services/tabs-service.js';
-import { UrlOpener } from './services/url-opener.js';
+import { UrlService } from './services/url-service.js';
 import { View } from './view/view.js';
 import { Controller } from './controllers/controller.js';
-import { delay } from './utils/delay.js';
 import { createClipboardWriter } from './utils/create-clipboard-writer.js';
 
 /**
@@ -18,15 +17,14 @@ document.addEventListener('DOMContentLoaded', async () => {
    * - second regex validates tab URLs to keep HTTP(S) only
    */
   const parser = new UrlParser(/https?:\/\/[^\s]+/g, /^https?:\/\//);
+  const textStore = new Store(chrome.storage.local, 'text');
+  const filterStore = new Store(chrome.storage.local, 'filter');
+
   const text = new Text();
-  const textStore = new TextStore(chrome.storage.local, 'text');
-  const filterStore = new TextStore(chrome.storage.local, 'filter');
   const tabs = new TabsService(chrome.tabs);
-  const copyText = createClipboardWriter(document, navigator);
-  const opener = new UrlOpener(tabs, {
+  const urlService = new UrlService(tabs, {
     batchSize: 6,
-    batchDelayMs: 120,
-    delayFn: delay
+    batchDelayMs: 120
   });
 
   // `View` encapsulates all DOM selectors and state rendering.
@@ -40,8 +38,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       textStore: textStore,
       filterStore: filterStore,
       tabs: tabs,
-      opener: opener,
-      copyText: copyText
+      urlService: urlService,
+      copyText: createClipboardWriter(document, navigator)
     },
     {
       statusMs: 1600,
