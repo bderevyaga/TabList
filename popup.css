@@ -66,7 +66,7 @@ body {
   flex-direction: column;
 }
 
-.popup-shell {
+.popup {
   flex: 1;
   min-height: 0;
   display: flex;
@@ -79,28 +79,28 @@ body {
   box-shadow: 0 8px 16px var(--color-shadow-panel);
 }
 
-.popup-header {
+.popup__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
 }
 
-h1 {
+.popup__title {
   margin: 0;
   font-size: 22px;
   font-weight: 700;
   letter-spacing: 0.2px;
 }
 
-.popup-subtitle {
+.popup__subtitle {
   margin: 5px 0 0;
   font-size: 13px;
   line-height: 1.35;
   color: var(--color-text-secondary);
 }
 
-.link-count-badge {
+.popup__link-count {
   border-radius: 999px;
   padding: 6px 10px;
   font-size: 12px;
@@ -111,7 +111,7 @@ h1 {
   color: var(--color-brand-strong);
 }
 
-.section-label {
+.popup__label {
   margin: 0;
   font-size: 12px;
   letter-spacing: 0.7px;
@@ -119,20 +119,20 @@ h1 {
   color: var(--color-text-secondary);
 }
 
-.link-list-header {
+.popup__list-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
 }
 
-.link-list-tools {
+.popup__tools {
   display: flex;
   align-items: center;
   gap: 6px;
 }
 
-textarea {
+.popup__list-input {
   flex: 1;
   width: 100%;
   min-height: 0;
@@ -151,19 +151,19 @@ textarea {
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
-textarea:focus {
+.popup__list-input:focus {
   outline: none;
   border-color: var(--color-brand-focus);
   box-shadow: 0 0 0 3px var(--color-brand-focus-ring);
 }
 
-.capture-filter {
+.popup__filter {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-#capture-filter-input {
+.popup__filter-input {
   width: 100%;
   margin: 0;
   border: 1px solid var(--color-border-default);
@@ -176,13 +176,13 @@ textarea:focus {
   transition: border-color 160ms ease, box-shadow 160ms ease;
 }
 
-#capture-filter-input:focus {
+.popup__filter-input:focus {
   outline: none;
   border-color: var(--color-brand-focus);
   box-shadow: 0 0 0 3px var(--color-brand-focus-ring);
 }
 
-.popup-meta {
+.popup__meta {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -190,12 +190,12 @@ textarea:focus {
   margin-top: -2px;
 }
 
-#status-message {
+.popup__status-message {
   font-size: 12px;
   color: var(--color-text-secondary);
 }
 
-.autosave-indicator {
+.popup__autosave-indicator {
   font-size: 11px;
   padding: 4px 8px;
   border-radius: 7px;
@@ -205,13 +205,13 @@ textarea:focus {
   white-space: nowrap;
 }
 
-.primary-actions {
+.popup__actions {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 8px;
 }
 
-button {
+.popup__button {
   border: 0;
   border-radius: 10px;
   padding: 10px 12px;
@@ -222,43 +222,44 @@ button {
   transition: opacity 100ms ease;
 }
 
-button:disabled {
+.popup__button:disabled {
   opacity: 0.55;
   cursor: default;
 }
 
-button:focus-visible {
+.popup__button:focus-visible {
   outline: 3px solid var(--color-brand-outline);
   outline-offset: 2px;
 }
 
-#open-links-button {
+.popup__button--open {
   color: var(--color-text-on-dark);
   background: linear-gradient(120deg, var(--color-brand), var(--color-brand-strong));
 }
 
-#capture-tabs-button {
+.popup__button--capture {
   color: var(--color-capture-text);
   background: linear-gradient(120deg, var(--color-capture-bg-start), var(--color-capture-bg-end));
   border: 1px solid var(--color-capture-border);
 }
 
-#close-listed-button {
+.popup__button--close {
   color: var(--color-text-on-dark);
   background: linear-gradient(120deg, var(--color-close-bg-start), var(--color-close-bg-end));
 }
 
-.link-list-tools #copy-links-button {
+.popup__button--tool {
   padding: 6px 10px;
   font-size: 11px;
+}
+
+.popup__button--copy {
   color: var(--color-copy-text);
   background: linear-gradient(120deg, var(--color-copy-bg-start), var(--color-copy-bg-end));
   border: 1px solid var(--color-copy-border);
 }
 
-.link-list-tools #clear-links-button {
-  padding: 6px 10px;
-  font-size: 11px;
+.popup__button--clear {
   color: var(--color-danger);
   background: linear-gradient(120deg, var(--color-clear-bg-start), var(--color-clear-bg-end));
   border: 1px solid var(--color-clear-border);
@@ -269,7 +270,7 @@ button:focus-visible {
   transform: none;
 }
 
-.reveal-step-1 { animation-delay: 20ms; }
-.reveal-step-2 { animation-delay: 70ms; }
-.reveal-step-3 { animation-delay: 120ms; }
-.reveal-step-4 { animation-delay: 170ms; }
+.reveal--step-1 { animation-delay: 20ms; }
+.reveal--step-2 { animation-delay: 70ms; }
+.reveal--step-3 { animation-delay: 120ms; }
+.reveal--step-4 { animation-delay: 170ms; }
