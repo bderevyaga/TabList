@@ -7,7 +7,7 @@ import { callChrome } from '../utils/call-chrome.js';
  * @property {(keys: string[], callback: () => void) => void} remove Removes values by keys.
  */
 
-export class TextStore {
+export class Store {
   /**
    * @param {StorageArea} area `chrome.storage.*` area adapter.
    * @param {string} key Storage key used by this store instance.

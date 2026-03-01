@@ -143,16 +143,17 @@ export class Text {
   /**
    * @returns {string}
    */
-  noTabsToClose() {
-    return 'No listed tabs to close.';
+  closing() {
+    return 'Closing tabs...';
   }
 
   /**
-   * @param {number} count Number of tabs to close.
+   * @param {number} closedCount Number of tabs already closed.
+   * @param {number} totalCount Total tabs that need closing.
    * @returns {string}
    */
-  closing(count) {
-    return `Closing ${this.plural(count, 'tab')}...`;
+  closingProgress(closedCount, totalCount) {
+    return `Closing ${closedCount}/${totalCount} tabs...`;
   }
 
   /**
