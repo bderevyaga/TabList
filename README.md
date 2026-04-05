@@ -40,6 +40,15 @@ Chrome extension для сохранения, открытия и управле
    - **Copy**: копирует текущее содержимое списка.
    - **Clear**: очищает поле списка и сохраненный текст.
 
+## Релизный архив
+
+- `sh release.sh patch` — повышает patch-версию и создает архив в `releases/`.
+- `sh release.sh minor` — повышает minor-версию и сбрасывает patch.
+- `sh release.sh major` — повышает major-версию и сбрасывает minor и patch.
+- `sh release.sh --set-version 1.2.3` — устанавливает конкретную версию вручную.
+
+Скрипт обновляет поле `version` в `manifest.json` и создает архив вида `releases/TabList-vX.Y.Z.zip`.
+
 ## Права расширения
 
 - `storage`: хранение списка ссылок и фильтра между сессиями.
@@ -58,3 +67,4 @@ Chrome extension для сохранения, открытия и управле
 - `popup/view/` — доступ к DOM-элементам popup.
 - `popup/utils/` — утилиты (clipboard, delay).
 - `icons/` — иконки расширения.
+- `release.sh` — повышение версии и упаковка релизного архива.
