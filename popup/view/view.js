@@ -7,6 +7,7 @@
  * @property {() => void} onClear Called when the "clear" button is clicked.
  * @property {() => void} onClose Called when the "close links" button is clicked.
  * @property {() => void} onOpen Called when the "open links" button is clicked.
+ * @property {() => void} onToggleTheme Called when the "toggle theme" button is clicked.
  */
 
 /**
@@ -21,12 +22,14 @@ export class View {
    * @param {Document} doc Popup document used to locate UI elements.
    */
   constructor(doc) {
+    this.documentElement = doc.documentElement;
     this.textInput = doc.getElementById('text-input');
     this.filterInput = doc.getElementById('filter-input');
+    this.themeToggleBtn = doc.getElementById('theme-toggle-button');
 
     this.copyBtn = doc.getElementById('copy-text-button');
     this.clearBtn = doc.getElementById('clear-text-button');
-    
+
     this.openBtn = doc.getElementById('open-links-button');
     this.captureBtn = doc.getElementById('capture-links-button');
     this.closeBtn = doc.getElementById('close-links-button');
@@ -50,6 +53,27 @@ export class View {
     this.captureBtn.addEventListener('click', handlers.onCapture);
     this.closeBtn.addEventListener('click', handlers.onClose);
     this.openBtn.addEventListener('click', handlers.onOpen);
+    this.themeToggleBtn.addEventListener('click', handlers.onToggleTheme);
+  }
+
+  /**
+   * Updates the UI to reflect a given theme.
+   * @param {'light' | 'dark'} theme 
+   * @returns {void}
+   */
+  setTheme(theme) {
+    const el = this.documentElement;
+
+    el.classList.remove('theme-light', 'theme-dark');
+    if (theme !== 'auto') el.classList.add(`theme-${theme}`);
+
+    const icons = {
+      dark: '🌙',
+      light: '☀️',
+      auto: '🌗',
+    };
+
+    this.themeToggleBtn.textContent = icons[theme] || icons.auto;
   }
 
   /**

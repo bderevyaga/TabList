@@ -16,6 +16,7 @@ import { createFailureTracker } from '../utils/create-failure-tracker.js';
  * @property {import('../services/url-service.js').UrlService} urlService URL tabs orchestration service.
  * @property {import('../storage/store.js').Store} textStore Storage for text input value.
  * @property {import('../storage/store.js').Store} filterStore Storage for filter input value.
+ * @property {import('../storage/store.js').Store} themeStore Storage for theme preference.
  * @property {(text: string) => Promise<void>} copyText Clipboard writer function.
  */
 
@@ -31,6 +32,7 @@ import { createFailureTracker } from '../utils/create-failure-tracker.js';
  * @property {boolean} closing Whether tab closing flow is currently running.
  * @property {ReturnType<typeof setTimeout> | null} statusTimer Active status reset timer.
  * @property {ReturnType<typeof setTimeout> | null} saveTimer Active delayed save timer.
+ * @property {'auto' | 'light' | 'dark'} theme Current active theme mode.
  */
 
 export class Controller {
@@ -44,6 +46,7 @@ export class Controller {
     this.text = deps.text;
     this.textStore = deps.textStore;
     this.filterStore = deps.filterStore;
+    this.themeStore = deps.themeStore;
     this.tabs = deps.tabs;
     this.urlService = deps.urlService;
     this.copyText = deps.copyText;
@@ -55,7 +58,8 @@ export class Controller {
       opening: false,
       closing: false,
       statusTimer: null,
-      saveTimer: null
+      saveTimer: null,
+      theme: 'auto'
     };
   }
 
@@ -73,15 +77,20 @@ export class Controller {
       onCopy: () => this.onCopy(),
       onClear: () => this.onClear(),
       onClose: () => this.onClose(),
-      onOpen: () => this.onOpen()
+      onOpen: () => this.onOpen(),
+      onToggleTheme: () => this.onToggleTheme()
     });
 
     const { markFailed, hasFailed } = createFailureTracker();
 
-    const [text, filter] = await Promise.all([
+    const [text, filter, theme] = await Promise.all([
       this.textStore.get().catch(markFailed('')),
       this.filterStore.get().catch(markFailed('')),
+      this.themeStore.get().catch(markFailed(''))
     ]);
+
+    this.state.theme = (theme === 'light' || theme === 'dark') ? theme : 'auto';
+    this.view.setTheme(this.state.theme);
 
     this.view.setText(text);
     this.view.setFilter(filter);
@@ -231,6 +240,24 @@ export class Controller {
     this.prepare();
     this.queueSave();
     this.render(false);
+  }
+
+  /**
+   * Toggles between auto, light, and dark modes.
+   * @returns {Promise<void>}
+   */
+  async onToggleTheme() {
+    const themes = ['auto', 'light', 'dark'];
+    const index = themes.indexOf(this.state.theme);
+
+    const nextTheme = themes[(index + 1) % themes.length];
+
+    this.state.theme = nextTheme;
+    this.view.setTheme(nextTheme);
+
+    try {
+      await this.themeStore.set(nextTheme);
+    } catch { }
   }
 
   /**

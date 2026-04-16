@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const parser = new UrlParser(/https?:\/\/[^\s]+/g, /^https?:\/\//);
   const textStore = new Store(chrome.storage.local, 'text');
   const filterStore = new Store(chrome.storage.local, 'filter');
+  const themeStore = new Store(chrome.storage.local, 'theme');
 
   const text = new Text();
   const tabs = new TabsService(chrome.tabs);
@@ -37,6 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       text: text,
       textStore: textStore,
       filterStore: filterStore,
+      themeStore: themeStore,
       tabs: tabs,
       urlService: urlService,
       copyText: createClipboardWriter(document, navigator)

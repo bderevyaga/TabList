@@ -1,41 +1,57 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <title>TabList</title>
-    <link rel="stylesheet" href="./popup.css">
-    <script type="module" src="./popup/main.js"></script>
-  </head>
-  <body>
-    <main class="popup">
-      <header class="popup__header reveal reveal--step-1">
-        <div>
-          <h1 class="popup__title">TabList</h1>
-          <p class="popup__subtitle">Save, open, and manage tab links in one list.</p>
-        </div>
-        <span id="link-count" class="popup__link-count" role="status" aria-live="polite" aria-atomic="true">0 links</span>
-      </header>
-      <div class="popup__text-header reveal reveal--step-2">
-        <label for="text-input" class="popup__label">Link List</label>
-        <div class="popup__tools">
-          <button id="copy-text-button" class="popup__button popup__button--tool popup__button--copy" type="button" aria-label="Copy text to clipboard">Copy</button>
-          <button id="clear-text-button" class="popup__button popup__button--tool popup__button--clear" type="button" aria-label="Clear text">Clear</button>
-        </div>
+
+<head>
+  <meta charset="UTF-8">
+  <title>TabList</title>
+  <link rel="stylesheet" href="./popup.css">
+  <script type="module" src="./popup/main.js"></script>
+</head>
+
+<body>
+  <main class="popup">
+    <header class="popup__header reveal reveal--step-1">
+      <div>
+        <h1 class="popup__title">TAB_LIST</h1>
+        <p class="popup__subtitle">Save, open, and manage tab links in one list.</p>
       </div>
-      <textarea autofocus id="text-input" class="popup__text-input" aria-label="Text input" placeholder="https://example.com&#10;https://docs.example.com"></textarea>
-      <div class="popup__filter reveal reveal--step-3">
-        <label for="filter-input" class="popup__label">Capture Filter</label>
-        <input id="filter-input" class="popup__filter-input" type="text" aria-label="Filter captured links by URL regexp" placeholder="URL regexp, e.g. ^https://docs\\.example\\.com">
+      <div class="popup__tools">
+        <span id="link-count" class="popup__link-count" role="status" aria-live="polite" aria-atomic="true">0
+          links</span>
+        <button id="theme-toggle-button" class="popup__theme-toggle" type="button" aria-label="Toggle dark mode"
+          title="Toggle dark mode">🌗</button>
       </div>
-      <div class="popup__meta reveal reveal--step-3">
-        <span id="status-message" class="popup__status-message" aria-live="polite" aria-atomic="true">Add URLs or capture your current tabs.</span>
-        <span class="popup__autosave-indicator">Autosave on</span>
+    </header>
+    <div class="popup__text-header reveal reveal--step-2">
+      <label for="text-input" class="popup__label">Link List</label>
+      <div class="popup__tools">
+        <button id="copy-text-button" class="popup__button popup__button--tool popup__button--copy" type="button"
+          aria-label="Copy text to clipboard">Copy</button>
+        <button id="clear-text-button" class="popup__button popup__button--tool popup__button--clear" type="button"
+          aria-label="Clear text">Clear</button>
       </div>
-      <div class="popup__actions reveal reveal--step-4">
-        <button id="capture-links-button" class="popup__button popup__button--capture" type="button" aria-label="Capture current links">Capture Links</button>
-        <button id="open-links-button" class="popup__button popup__button--open" type="button" aria-label="Open links from text">Open Links</button>
-        <button id="close-links-button" class="popup__button popup__button--close" type="button" aria-label="Close links from text">Close Links</button>
-      </div>
-    </main>
-  </body>
+    </div>
+    <textarea autofocus id="text-input" class="popup__text-input" aria-label="Text input"
+      placeholder="https://example.com&#10;https://docs.example.com"></textarea>
+    <div class="popup__filter reveal reveal--step-3">
+      <label for="filter-input" class="popup__label">Capture Filter</label>
+      <input id="filter-input" class="popup__filter-input" type="text" aria-label="Filter captured links by URL regexp"
+        placeholder="URL regexp, e.g. ^https://docs\\.example\\.com">
+    </div>
+    <div class="popup__meta reveal reveal--step-3">
+      <span id="status-message" class="popup__status-message" aria-live="polite" aria-atomic="true">Add URLs or capture
+        your current tabs.</span>
+      <span class="popup__autosave-indicator">Autosave on</span>
+    </div>
+    <div class="popup__actions reveal reveal--step-4">
+      <button id="capture-links-button" class="popup__button popup__button--capture" type="button"
+        aria-label="Capture current links">Capture Links</button>
+      <button id="open-links-button" class="popup__button popup__button--open" type="button"
+        aria-label="Open links from text">Open Links</button>
+      <button id="close-links-button" class="popup__button popup__button--close" type="button"
+        aria-label="Close links from text">Close Links</button>
+    </div>
+  </main>
+</body>
+
 </html>
