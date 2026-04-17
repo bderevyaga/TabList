@@ -14,7 +14,6 @@
   --color-brand-focus: rgba(15, 157, 142, 0.7);
   --color-brand-focus-ring: rgba(15, 157, 142, 0.14);
   --color-brand-outline: rgba(15, 157, 142, 0.35);
-  --color-danger: #be5f5a;
 
   --color-link-count-bg-start: #f7fff2;
   --color-link-count-bg-end: #e6fffb;
@@ -38,6 +37,7 @@
   --color-copy-bg-end: #e6f3ff;
   --color-copy-border: #c8dff0;
 
+  --color-clear-text: #be5f5a;
   --color-clear-bg-start: #fff1f0;
   --color-clear-bg-end: #ffe6e3;
   --color-clear-border: #f2cac7;
@@ -80,6 +80,7 @@
     --color-copy-bg-end: #2a4365;
     --color-copy-border: #3182ce;
 
+    --color-clear-text: #e2e8f0;
     --color-clear-bg-start: #742a2a;
     --color-clear-bg-end: #5c1818;
     --color-clear-border: #9b2c2c;
@@ -121,6 +122,7 @@
   --color-copy-bg-end: #2a4365;
   --color-copy-border: #3182ce;
 
+  --color-clear-text: #e2e8f0;
   --color-clear-bg-start: #742a2a;
   --color-clear-bg-end: #5c1818;
   --color-clear-border: #9b2c2c;
@@ -396,7 +398,7 @@ body {
 }
 
 .popup__button--clear {
-  color: var(--color-danger);
+  color: var(--color-clear-text);
   background: linear-gradient(120deg, var(--color-clear-bg-start), var(--color-clear-bg-end));
   border: 1px solid var(--color-clear-border);
 }
