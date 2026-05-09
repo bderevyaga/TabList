@@ -1,80 +1,80 @@
 # TabList
 
-Chrome extension для сохранения, открытия и управления списком ссылок из popup-окна.
+TabList helps you manage many tabs quickly using one simple URL list.
 
-## Возможности
+## What it does
 
-- Автосохранение текста списка ссылок, поля `Capture Filter` и выбранной темы в `chrome.storage.local`.
-- Поддержка трех визуальных тем (Светлая ☀️, Темная 🌙, Авто 🌗) с циклическим переключателем.
-- Счетчик ссылок и статусные сообщения в popup (`link count`, `status message`).
-- `Capture Links`: захват открытых вкладок с URL `http(s)://`, с опциональным regex-фильтром по URL.
-- `Open Links`: извлечение URL из текста и открытие новых вкладок пакетами в фоне.
-- Защита от дублей при открытии: если вкладка с таким URL уже активна, новая не открывается; неактивные дубли закрываются.
-- `Close Links`: закрытие только неактивных вкладок, URL которых есть в текущем списке.
-- `Copy` и `Clear` для копирования и очистки текста списка.
-- Дедупликация URL во всех основных операциях.
+- Saves your URL list in the popup with autosave.
+- Captures currently open tabs into the list with **Capture Links**.
+- Opens links from the list in batches with **Open Links**.
+- Avoids unnecessary duplicates: if a matching active tab exists, it won't open another one.
+- Closes inactive tabs that match URLs in your list with **Close Links**.
+- Copies the full list to clipboard in one click with **Copy**.
+- Shows valid link count and live status updates.
+- Supports a capture filter for limiting captured tab URLs with a regular expression.
+- Supports multiple saved lists and light, dark, or automatic themes.
 
-## Требования
+## Privacy
 
-- Google Chrome (или Chromium-совместимый браузер с поддержкой Manifest V3).
-- Проект использует нативные JavaScript ES-модули. Никаких систем сборки (build step) или пакетных менеджеров не требуется.
+- Your data is stored locally in your browser with `chrome.storage.local`.
+- No URL list is sent to external servers.
 
-## Установка (локально)
+## Permissions
 
-1. Откройте `chrome://extensions`.
-2. Включите **Developer mode**.
-3. Нажмите **Load unpacked**.
-4. Выберите папку проекта `TabList`.
+- `tabs` - read open tabs and open/close tabs from your list.
+- `storage` - save your list locally.
 
-После этого расширение появится в панели браузера.
+## Requirements
 
-## Использование
+- Google Chrome, or a Chromium-compatible browser with Manifest V3 support.
+- No build step, package manager, or framework is required. The project uses plain JavaScript ES modules.
 
-1. Нажмите на иконку расширения, чтобы открыть popup.
-2. В поле **Link List** вставьте URL (можно по одному на строку или в составе текста).
-3. Опционально заполните **Capture Filter**:
-   - `example\\.com` — обычный regex без флагов;
-   - `/example\\.com/i` — regex в slash-нотации с флагами.
-4. Выберите оформление с помощью переключателя темы в шапке (🌗 — Авто, ☀️ — Светлая, 🌙 — Темная).
-5. Используйте кнопки:
-   - **Capture Links**: перезаписывает список ссылками из текущих вкладок (с учетом фильтра).
-   - **Open Links**: открывает ссылки из списка в фоновых вкладках.
-   - **Close Links**: закрывает неактивные вкладки, URL которых есть в списке.
-   - **Copy**: копирует текущее содержимое списка.
-   - **Clear**: очищает поле списка и сохраненный текст.
+## Local installation
 
-## Релизный архив
+1. Open `chrome://extensions`.
+2. Enable **Developer mode**.
+3. Click **Load unpacked**.
+4. Select the `TabList` project folder.
 
-- `sh release.sh patch` — повышает patch-версию и создает архив в `releases/`.
-- `sh release.sh minor` — повышает minor-версию и сбрасывает patch.
-- `sh release.sh major` — повышает major-версию и сбрасывает minor и patch.
-- `sh release.sh --set-version 1.2.3` — устанавливает конкретную версию вручную.
+The extension will appear in the browser toolbar.
 
-Скрипт обновляет поле `version` в `manifest.json` и создает архив вида `releases/TabList-vX.Y.Z.zip`.
+## Usage
 
-## Генерация иконок из SVG
+1. Click the extension icon to open the popup.
+2. Add URLs to **Link List**, one per line or mixed into text.
+3. Optionally set **Capture Filter** to capture only matching tab URLs.
+4. Use the theme toggle in the header to switch between automatic, light, and dark themes.
+5. Use **Capture Links** to replace the list with URLs from currently open tabs.
+6. Use **Open Links** to open valid URLs from the list in background tabs.
+7. Use **Close Links** to close inactive tabs whose URLs are listed.
+8. Use **Copy** to copy the full list, or **Clear** to empty it.
 
-- `sh generate-icons.sh` — генерирует `icons/icon16.png`, `icons/icon32.png`, `icons/icon48.png`, `icons/icon128.png` из `icons/logo.svg`.
-- `sh generate-icons.sh path/to/logo.svg` — генерирует те же PNG из указанного SVG-файла.
+### Capture filter examples
 
-## Права расширения
+- `example\\.com` - plain regular expression without flags.
+- `/example\\.com/i` - slash notation with flags.
 
-- `storage`: хранение списка ссылок, фильтра и выбранной темы между сессиями.
-- `tabs`: чтение открытых вкладок, создание и закрытие вкладок.
+## Release archive
 
-## Структура проекта
+- `sh release.sh patch` - increments the patch version and creates an archive in `releases/`.
+- `sh release.sh minor` - increments the minor version and resets patch.
+- `sh release.sh major` - increments the major version and resets minor and patch.
+- `sh release.sh --set-version 1.2.3` - sets an exact version manually.
 
-- `manifest.json` — конфигурация расширения (Manifest V3).
-- `popup.html` — разметка popup.
-- `popup.css` — стили popup.
-- `popup/main.js` — точка входа popup.
-- `popup/parsers/` — парсинг URL и regex-фильтра.
-- `popup/formatters/` — форматирование текста и статусных сообщений для UI.
-- `popup/controllers/` — UI-контроллер popup.
-- `popup/services/` — работа с вкладками браузера.
-- `popup/storage/` — обертка над `chrome.storage.local`.
-- `popup/view/` — доступ к DOM-элементам popup.
-- `popup/utils/` — утилиты (clipboard, delay).
-- `icons/` — иконки расширения.
-- `release.sh` — повышение версии и упаковка релизного архива.
-- `generate-icons.sh` — генерация PNG-иконок из SVG-логотипа.
+The script updates the `version` field in `manifest.json` and creates an archive named `releases/TabList-vX.Y.Z.zip`.
+
+## Project structure
+
+- `manifest.json` - Manifest V3 extension configuration.
+- `popup.html` - popup markup.
+- `popup.css` - popup styles.
+- `popup/main.js` - popup entry point.
+- `popup/controllers/` - popup controller and UI orchestration.
+- `popup/services/` - browser tab and URL-processing behavior.
+- `popup/storage/` - wrappers around `chrome.storage.local`.
+- `popup/view/` - DOM access and rendering.
+- `popup/parsers/` - URL and filter parsing.
+- `popup/formatters/` - UI text formatting.
+- `popup/utils/` - shared utilities.
+- `icons/` - extension icons.
+- `release.sh` - version bumping and release packaging.

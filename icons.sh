@@ -9,9 +9,9 @@ DEFAULT_LOGO="$ICONS_DIR/icon.svg"
 usage() {
   cat <<'USAGE'
 Usage:
-  sh generate-icons.sh
-  sh generate-icons.sh /absolute/path/to/logo.svg
-  sh generate-icons.sh relative/path/to/logo.svg
+  sh icons.sh
+  sh icons.sh /absolute/path/to/logo.svg
+  sh icons.sh relative/path/to/logo.svg
 
 Description:
   Generates icons/icon16.png, icons/icon32.png, icons/icon48.png, and
