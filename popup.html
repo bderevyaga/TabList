@@ -22,6 +22,20 @@
           title="Toggle dark mode">🌗</button>
       </div>
     </header>
+    <div class="popup__workspaces reveal reveal--step-2">
+      <label for="workspace-select" class="popup__label popup__label--hidden">Select List</label>
+      <select id="workspace-select" class="popup__workspace-select" aria-label="Select List"></select>
+      <div id="workspace-actions-view" class="popup__workspace-actions">
+        <button id="workspace-add" class="popup__button popup__button--tool" type="button" title="New List">+</button>
+        <button id="workspace-rename" class="popup__button popup__button--tool" type="button" title="Rename List">✎</button>
+        <button id="workspace-remove" class="popup__button popup__button--tool" type="button" title="Delete List">−</button>
+      </div>
+      <input id="workspace-input" type="text" class="popup__workspace-select" style="display: none;" aria-label="List Name" placeholder="List name...">
+      <div id="workspace-actions-edit" class="popup__workspace-actions" style="display: none;">
+        <button id="workspace-save" class="popup__button popup__button--tool" type="button" title="Save">✓</button>
+        <button id="workspace-cancel" class="popup__button popup__button--tool" type="button" title="Cancel">✕</button>
+      </div>
+    </div>
     <div class="popup__text-header reveal reveal--step-2">
       <label for="text-input" class="popup__label">Link List</label>
       <div class="popup__tools">

@@ -207,6 +207,62 @@ body {
   color: var(--color-text-secondary);
 }
 
+/* Workspaces */
+.popup__workspaces {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.popup__workspace-select {
+  flex: 1;
+
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  background-color: var(--color-surface-soft);
+  border: 1px solid var(--color-border-default);
+  color: var(--color-text-primary);
+  border-radius: 10px;
+  padding: 6px 10px;
+  height: 30px;
+  font-family: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  transition: border-color var(--transition), box-shadow var(--transition);
+
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' fill='none'%3E%3Cpath d='M2.5 4.5L6 8l3.5-3.5' stroke='%23a0aec0' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+}
+
+.popup__workspace-select:focus {
+  border-color: var(--color-brand-focus);
+  box-shadow: 0 0 0 3px var(--color-brand-focus-ring);
+}
+
+.popup__workspace-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.popup__workspace-actions .popup__button--tool {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-surface-soft);
+  border: 1px solid var(--color-border-default);
+  color: var(--color-text-primary);
+  font-size: 14px;
+}
+
+/* Link List Text Area */
 .popup__text-header {
   display: flex;
   align-items: center;

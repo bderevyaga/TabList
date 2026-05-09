@@ -52,6 +52,11 @@ Chrome extension для сохранения, открытия и управле
 
 Скрипт обновляет поле `version` в `manifest.json` и создает архив вида `releases/TabList-vX.Y.Z.zip`.
 
+## Генерация иконок из SVG
+
+- `sh generate-icons.sh` — генерирует `icons/icon16.png`, `icons/icon32.png`, `icons/icon48.png`, `icons/icon128.png` из `icons/logo.svg`.
+- `sh generate-icons.sh path/to/logo.svg` — генерирует те же PNG из указанного SVG-файла.
+
 ## Права расширения
 
 - `storage`: хранение списка ссылок, фильтра и выбранной темы между сессиями.
@@ -72,3 +77,4 @@ Chrome extension для сохранения, открытия и управле
 - `popup/utils/` — утилиты (clipboard, delay).
 - `icons/` — иконки расширения.
 - `release.sh` — повышение версии и упаковка релизного архива.
+- `generate-icons.sh` — генерация PNG-иконок из SVG-логотипа.

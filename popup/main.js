@@ -1,6 +1,7 @@
 import { UrlParser } from './parsers/url-parser.js';
 import { Text } from './formatters/text.js';
 import { Store } from './storage/store.js';
+import { WorkspaceStore } from './storage/workspace-store.js';
 import { TabsService } from './services/tabs-service.js';
 import { UrlService } from './services/url-service.js';
 import { View } from './view/view.js';
@@ -17,8 +18,8 @@ document.addEventListener('DOMContentLoaded', async () => {
    * - second regex validates tab URLs to keep HTTP(S) only
    */
   const parser = new UrlParser(/https?:\/\/[^\s]+/g, /^https?:\/\//);
-  const textStore = new Store(chrome.storage.local, 'text');
-  const filterStore = new Store(chrome.storage.local, 'filter');
+  
+  const workspaceStore = new WorkspaceStore(chrome.storage.local);
   const themeStore = new Store(chrome.storage.local, 'theme');
 
   const text = new Text();
@@ -36,8 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       view: view,
       parser: parser,
       text: text,
-      textStore: textStore,
-      filterStore: filterStore,
+      workspaceStore: workspaceStore,
       themeStore: themeStore,
       tabs: tabs,
       urlService: urlService,
