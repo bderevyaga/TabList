@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="440" height="280" viewBox="0 0 440 280">
+  <defs>
+    <linearGradient id="background-gradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#d9f2ff"/>
+      <stop offset=".56" stop-color="#f8fbfa"/>
+      <stop offset="1" stop-color="#fff0d7"/>
+    </linearGradient>
+    <path id="tab" d="M0 0h42l13 14h69a13 13 0 0 1 13 13v73a13 13 0 0 1-13 13H0a13 13 0 0 1-13-13V13A13 13 0 0 1 0 0z"/>
+    <path id="lines" d="M0 0h0m0 17h0m0 17h0M14 0h70M14 17h70M14 34h51" />
+  </defs>
+
+  <rect width="440" height="280" fill="url(#background-gradient)"/>
+  <path d="M0 242C101 210 194 260 276 234c68-21 98-2 164-23v69H0z" fill="#fff" fill-opacity=".26"/>
+
+  <g transform="translate(220 50)" stroke="#0a0a12" stroke-linecap="round" stroke-linejoin="round">
+    <use href="#tab" x="60" y="0" fill="#5aa9d6" stroke-width="4"/>
+    <use href="#tab" x="40" y="20" fill="#fff" stroke-width="4"/>
+    <use href="#tab" x="20" y="40" fill="#0f9d8e" stroke-width="4"/>
+    <use href="#tab" x="0" y="60" fill="#fff" stroke-width="4"/>
+    <use href="#lines" x="10" y="110" stroke-width="6"/>
+  </g>
+
+  <g transform="translate(20 30)">
+    <rect width="60" height="60" rx="10" fill="#ffffff" fill-opacity=".94"/>
+    <image href="icons/icon.svg" x="5" y="5" width="50" height="50" />
+  </g>
+
+  <g transform="translate(20 150)" font-family="Arial, Helvetica, sans-serif">
+    <text x="0" y="0" fill="#213040" font-size="30" font-weight="700" letter-spacing="-.7">TabList</text>
+    <text x="0" y="20" fill="#596674" font-size="12">Organize your tabs in one click.</text>
+
+    <g transform="translate(0 50)">
+      <rect x="0" y="0" width="110" height="30" rx="10" fill="#0f9d8e"/>
+      <text x="15" y="20" fill="#fff" font-size="12" font-weight="700">Manage Links</text>
+    </g>
+  </g>
+</svg>

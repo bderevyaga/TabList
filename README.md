@@ -78,3 +78,5 @@ The script updates the `version` field in `manifest.json` and creates an archive
 - `popup/utils/` - shared utilities.
 - `icons/` - extension icons.
 - `release.sh` - version bumping and release packaging.
+- `icons.sh` - icon generation from SVG.
+- `advertisement.sh` - advertisement image generation from SVG.
