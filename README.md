@@ -11,6 +11,8 @@ TabList helps you manage many tabs quickly using one simple URL list.
 - Closes inactive tabs that match URLs in your list with **Close Links**.
 - Copies the full list to clipboard in one click with **Copy**.
 - Shows valid link count and live status updates.
+- Shows the active list's valid link count on the extension toolbar badge.
+- Adds the current page URL to the active list from the browser context menu.
 - Supports a capture filter for limiting captured tab URLs with a regular expression.
 - Supports multiple saved lists and light, dark, or automatic themes.
 
@@ -23,6 +25,7 @@ TabList helps you manage many tabs quickly using one simple URL list.
 
 - `tabs` - read open tabs and open/close tabs from your list.
 - `storage` - save your list locally.
+- `contextMenus` - add the current page URL to the active list from the right-click menu.
 
 ## Requirements
 

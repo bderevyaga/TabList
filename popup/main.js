@@ -1,4 +1,4 @@
-import { UrlParser } from './parsers/url-parser.js';
+import { createUrlParser } from './parsers/url-parser.js';
 import { Text } from './formatters/text.js';
 import { Store } from './storage/store.js';
 import { WorkspaceStore } from './storage/workspace-store.js';
@@ -12,12 +12,8 @@ import { createClipboardWriter } from './utils/create-clipboard-writer.js';
  * Bootstraps popup dependencies and starts controller lifecycle once DOM is ready.
  */
 document.addEventListener('DOMContentLoaded', async () => {
-  /**
-   * URL extraction config:
-   * - first regex captures URL-like tokens from free-form text
-   * - second regex validates tab URLs to keep HTTP(S) only
-   */
-  const parser = new UrlParser(/https?:\/\/[^\s]+/g, /^https?:\/\//);
+  // Shared parser keeps popup and toolbar badge URL counting consistent.
+  const parser = createUrlParser();
   
   const workspaceStore = new WorkspaceStore(chrome.storage.local);
   const themeStore = new Store(chrome.storage.local, 'theme');

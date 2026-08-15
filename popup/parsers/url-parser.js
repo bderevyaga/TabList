@@ -29,6 +29,15 @@ export class UrlParser {
   }
 
   /**
+   * Checks whether a value is an HTTP(S) URL.
+   * @param {unknown} value Value to validate.
+   * @returns {boolean} Whether the value is a supported URL.
+   */
+  isHttpUrl(value) {
+    return typeof value === 'string' && this.httpUrlPattern.test(value);
+  }
+
+  /**
    * Extracts and deduplicates URLs from text while preserving first occurrence order.
    * @param {string} text Raw textarea content.
    * @returns {string[]} Unique URL list.
@@ -56,7 +65,7 @@ export class UrlParser {
     const urls = tabs
       .filter((tab) => {
         const url = typeof tab.url === 'string' ? tab.url : '';
-        return this.httpUrlPattern.test(url) && this.matchFilter(url, filterRegex);
+        return this.isHttpUrl(url) && this.matchFilter(url, filterRegex);
       })
       .map((tab) => tab.url);
     return this.uniqueValues(urls);
@@ -112,3 +121,9 @@ export class UrlParser {
     return [...new Set(values)];
   }
 }
+
+/**
+ * Creates the URL parser shared by the popup and background worker.
+ * @returns {UrlParser} Configured URL parser.
+ */
+export const createUrlParser = () => new UrlParser(/https?:\/\/[^\s]+/g, /^https?:\/\//);
