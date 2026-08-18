@@ -12,7 +12,7 @@ TabList helps you manage many tabs quickly using one simple URL list.
 - Copies the full list to clipboard in one click with **Copy**.
 - Shows valid link count and live status updates.
 - Shows the active list's valid link count on the extension toolbar badge.
-- Adds the current page URL to the active list from the browser context menu.
+- Adds or removes the current page URL from the active list via the browser context menu.
 - Supports a capture filter for limiting captured tab URLs with a regular expression.
 - Supports multiple saved lists and light, dark, or automatic themes.
 
@@ -25,7 +25,7 @@ TabList helps you manage many tabs quickly using one simple URL list.
 
 - `tabs` - read open tabs and open/close tabs from your list.
 - `storage` - save your list locally.
-- `contextMenus` - add the current page URL to the active list from the right-click menu.
+- The `contextMenus` permission is required to add or remove the current page URL from your active TabList using the browser's right-click menu. We only use it when you select “Add page to TabList” or “Remove page from TabList”; it does not read page content or collect browsing data.
 
 ## Requirements
 

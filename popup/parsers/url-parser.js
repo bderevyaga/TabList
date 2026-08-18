@@ -47,6 +47,16 @@ export class UrlParser {
   }
 
   /**
+   * Removes exact URL matches while preserving all other input text.
+   * @param {string} text Raw textarea content.
+   * @param {string} url URL to remove.
+   * @returns {string} Updated text.
+   */
+  withoutUrl(text, url) {
+    return text.replace(this.urlMatchPattern, (match) => match === url ? '' : match);
+  }
+
+  /**
    * Counts non-empty lines in text.
    * @param {string} text Raw textarea content.
    * @returns {number} Number of lines containing non-whitespace characters.

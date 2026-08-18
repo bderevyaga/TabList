@@ -23,7 +23,8 @@ export class WorkspaceStore {
   }
 
   /**
-   * Loads workspaces from storage. If this is the first time, migrates existing 'text' and 'filter' keys into a 'Default' list.
+   * Loads workspaces from storage. If this is the first time, migrates existing
+   * `text` and `filter` keys into a `Default` list and removes the legacy keys.
    * @returns {Promise<WorkspacesData>}
    */
   async load() {
@@ -59,6 +60,13 @@ export class WorkspaceStore {
     if (!activeId || !workspaces.find(w => w.id === activeId)) {
       activeId = workspaces[0].id;
       await this.save(workspaces, activeId);
+    }
+
+    const legacyKeys = ['text', 'filter'].filter(key => key in result);
+    if (legacyKeys.length) {
+      await callChrome((callback) => {
+        this.area.remove(legacyKeys, callback);
+      });
     }
 
     return { lists: workspaces, activeId };

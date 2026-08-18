@@ -122,7 +122,7 @@ create_archive() {
 
   (
     cd "$ROOT_DIR"
-    zip -qr "$archive_path" manifest.json popup.html popup.css popup icons
+    zip -qr "$archive_path" background.js manifest.json popup.html popup.css popup icons
   )
 
   printf '%s\n' "$archive_path"

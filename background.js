@@ -1,94 +1,83 @@
 import { createUrlParser } from './popup/parsers/url-parser.js';
-import { callChrome } from './popup/utils/call-chrome.js';
+import { WorkspaceStore } from './popup/storage/workspace-store.js';
 
 const parser = createUrlParser();
-const ADD_PAGE_LINK_MENU_ID = 'add-page-link';
-const STORAGE_KEYS = ['workspaces', 'activeWorkspaceId', 'text'];
+const workspaceStore = new WorkspaceStore(chrome.storage.local);
 
-const getStorage = () => callChrome((callback) => {
-  chrome.storage.local.get(STORAGE_KEYS, callback);
-});
-
-const setStorage = (items) => callChrome((callback) => {
-  chrome.storage.local.set(items, callback);
-});
-
-const getActiveWorkspace = (data) => {
-  const workspaces = Array.isArray(data.workspaces) ? data.workspaces : [];
-  return workspaces.find((workspace) => workspace?.id === data.activeWorkspaceId) || workspaces[0];
+const loadActiveWorkspace = async () => {
+  const { lists, activeId } = await workspaceStore.load();
+  return {
+    lists,
+    activeId,
+    workspace: lists.find(({ id }) => id === activeId)
+  };
 };
 
-const appendUniqueLink = (text, url) => {
-  const currentText = typeof text === 'string' ? text : '';
-  if (parser.unique(currentText).includes(url)) {
-    return currentText;
+const PAGE_MENU_ITEMS = [
+  {
+    id: 'add-page-link',
+    title: 'Add',
+    updateText: (text, url) => {
+      const currentText = typeof text === 'string' ? text : '';
+      if (parser.unique(currentText).includes(url)) {
+        return currentText;
+      }
+
+      return currentText.trim() ? `${currentText.trimEnd()}\n${url}` : url;
+    }
+  },
+  {
+    id: 'remove-page-link',
+    title: 'Remove',
+    updateText: (text, url) => parser.withoutUrl(text, url)
   }
-
-  return currentText.trim() ? `${currentText.trimEnd()}\n${url}` : url;
-};
+];
 
 const updateBadge = async () => {
   try {
-    const data = await getStorage();
-    const workspace = getActiveWorkspace(data);
-    const text = typeof workspace?.text === 'string'
-      ? workspace.text
-      : typeof data.text === 'string' ? data.text : '';
-    chrome.action.setBadgeText({ text: String(parser.unique(text).length) });
+    const { workspace } = await loadActiveWorkspace();
+    chrome.action.setBadgeText({ text: String(parser.unique(workspace.text).length) });
   } catch (_error) {
     // The next storage change or worker start retries the update.
   }
 };
 
-const addPageLink = async ({ pageUrl }) => {
+const updatePageLink = async (pageUrl, updateText) => {
   if (!parser.isHttpUrl(pageUrl)) {
     return;
   }
 
   try {
-    const data = await getStorage();
-    const workspace = getActiveWorkspace(data);
-    const currentText = workspace?.text ?? data.text;
-    const updatedText = appendUniqueLink(currentText, pageUrl);
+    const { lists, activeId, workspace } = await loadActiveWorkspace();
+    const currentText = workspace.text;
+    const updatedText = updateText(currentText, pageUrl);
 
     if (updatedText === currentText) {
       return;
     }
 
-    if (workspace) {
-      workspace.text = updatedText;
-      await setStorage({ workspaces: data.workspaces, activeWorkspaceId: workspace.id });
-      return;
-    }
-
-    await setStorage({ text: updatedText });
+    workspace.text = updatedText;
+    await workspaceStore.save(lists, activeId);
   } catch (_error) {
     // Storage access failures should not interrupt the browser context menu.
   }
 };
 
-const createContextMenu = () => {
+chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
-    chrome.contextMenus.create({
-      id: ADD_PAGE_LINK_MENU_ID,
-      title: 'Add page to TabList',
-      contexts: ['page']
+    PAGE_MENU_ITEMS.forEach(({ id, title }) => {
+      chrome.contextMenus.create({ id, title, contexts: ['page'] });
     });
   });
-};
-
-chrome.runtime.onInstalled.addListener(() => {
-  createContextMenu();
-  void updateBadge();
 });
-chrome.runtime.onStartup.addListener(() => void updateBadge());
 chrome.contextMenus.onClicked.addListener((info) => {
-  if (info.menuItemId === ADD_PAGE_LINK_MENU_ID) {
-    void addPageLink(info);
+  const menuItem = PAGE_MENU_ITEMS.find(({ id }) => id === info.menuItemId);
+  if (menuItem) {
+    void updatePageLink(info.pageUrl, menuItem.updateText);
   }
 });
 chrome.storage.onChanged.addListener((changes, areaName) => {
-  if (areaName === 'local' && (changes.workspaces || changes.activeWorkspaceId || changes.text)) {
+  if (areaName === 'local' && (changes.workspaces || changes.activeWorkspaceId)) {
     void updateBadge();
   }
 });
