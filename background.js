@@ -23,7 +23,12 @@ const PAGE_MENU_ITEMS = [
         return currentText;
       }
 
-      return currentText.trim() ? `${currentText.trimEnd()}\n${url}` : url;
+      const trimmedText = currentText
+        .split(/\r?\n/)
+        .filter((line) => line.trim().length > 0)
+        .join('\n');
+
+      return trimmedText ? `${trimmedText}\n${url}` : url;
     }
   },
   {

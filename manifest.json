@@ -1,8 +1,8 @@
 {
     "manifest_version": 3,
     "name": "TabList",
-    "version": "1.3.2",
-    "description": "Save, open, and manage tab links in one list.",
+    "version": "1.3.3",
+    "description": "Manage your tabs efficiently by saving, opening, and closing URLs in batches. A simple, privacy-focused tab manager with dark mode support.",
     "permissions": [
       "storage",
       "tabs",

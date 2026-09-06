@@ -57,6 +57,15 @@ The extension will appear in the browser toolbar.
 - `example\\.com` - plain regular expression without flags.
 - `/example\\.com/i` - slash notation with flags.
 
+## Promotion and Badges
+
+To increase the chances of getting the **Featured** badge in the Chrome Web Store:
+
+1.  **High-Quality Assets:** Use the `advertisement.sh` script to generate promotional images. Ensure you upload clear, high-resolution screenshots of the extension in action.
+2.  **Detailed Description:** Use the content from the "What it does" section for the store listing description.
+3.  **Nomination:** Once published, you can self-nominate the extension via the [Chrome Web Store Featured Nomination form](https://support.google.com/chrome_webstore/contact/featured_nomination).
+4.  **Identity Verification:** Complete the identity verification in the Chrome Web Store developer console to qualify for the **Established Publisher** badge.
+
 ## Release archive
 
 - `sh release.sh patch` - increments the patch version and creates an archive in `releases/`.

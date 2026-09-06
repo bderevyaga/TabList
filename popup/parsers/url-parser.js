@@ -48,12 +48,17 @@ export class UrlParser {
 
   /**
    * Removes exact URL matches while preserving all other input text.
+   * Clean up empty lines that might be left behind.
    * @param {string} text Raw textarea content.
    * @param {string} url URL to remove.
    * @returns {string} Updated text.
    */
   withoutUrl(text, url) {
-    return text.replace(this.urlMatchPattern, (match) => match === url ? '' : match);
+    const updated = text.replace(this.urlMatchPattern, (match) => (match === url ? '' : match));
+    return updated
+      .split(/\r?\n/)
+      .filter((line) => line.trim().length > 0)
+      .join('\n');
   }
 
   /**
