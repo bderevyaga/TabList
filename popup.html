@@ -10,7 +10,7 @@
 
 <body>
   <main class="popup">
-    <header class="popup__header reveal reveal--step-1">
+    <header class="popup__header">
       <div>
         <h1 class="popup__title">TabList</h1>
         <p class="popup__subtitle">Save, open, and manage tab links in one list.</p>
@@ -22,7 +22,7 @@
           title="Toggle dark mode">🌗</button>
       </div>
     </header>
-    <div class="popup__workspaces reveal reveal--step-2">
+    <div class="popup__workspaces">
       <label for="workspace-select" class="popup__label popup__label--hidden">Select List</label>
       <select id="workspace-select" class="popup__workspace-select" aria-label="Select List"></select>
       <div id="workspace-actions-view" class="popup__workspace-actions">
@@ -30,13 +30,13 @@
         <button id="workspace-rename" class="popup__button popup__button--tool" type="button" title="Rename List">✎</button>
         <button id="workspace-remove" class="popup__button popup__button--tool" type="button" title="Delete List">−</button>
       </div>
-      <input id="workspace-input" type="text" class="popup__workspace-select" style="display: none;" aria-label="List Name" placeholder="List name...">
-      <div id="workspace-actions-edit" class="popup__workspace-actions" style="display: none;">
+      <input id="workspace-input" type="text" class="popup__workspace-input" hidden aria-label="List Name" placeholder="List name...">
+      <div id="workspace-actions-edit" class="popup__workspace-actions" hidden>
         <button id="workspace-save" class="popup__button popup__button--tool" type="button" title="Save">✓</button>
         <button id="workspace-cancel" class="popup__button popup__button--tool" type="button" title="Cancel">✕</button>
       </div>
     </div>
-    <div class="popup__text-header reveal reveal--step-2">
+    <div class="popup__text-header">
       <label for="text-input" class="popup__label">Link List</label>
       <div class="popup__tools">
         <button id="copy-text-button" class="popup__button popup__button--tool popup__button--copy" type="button"
@@ -47,17 +47,17 @@
     </div>
     <textarea autofocus id="text-input" class="popup__text-input" aria-label="Text input"
       placeholder="https://example.com&#10;https://docs.example.com"></textarea>
-    <div class="popup__filter reveal reveal--step-3">
+    <div class="popup__filter">
       <label for="filter-input" class="popup__label">Capture Filter</label>
       <input id="filter-input" class="popup__filter-input" type="text" aria-label="Filter captured links by URL regexp"
         placeholder="URL regexp, e.g. ^https://docs\\.example\\.com">
     </div>
-    <div class="popup__meta reveal reveal--step-3">
+    <div class="popup__meta">
       <span id="status-message" class="popup__status-message" aria-live="polite" aria-atomic="true">Add URLs or capture
         your current tabs.</span>
       <span class="popup__autosave-indicator">Autosave on</span>
     </div>
-    <div class="popup__actions reveal reveal--step-4">
+    <div class="popup__actions">
       <button id="capture-links-button" class="popup__button popup__button--capture" type="button"
         aria-label="Capture current links">Capture Links</button>
       <button id="open-links-button" class="popup__button popup__button--open" type="button"

@@ -83,7 +83,7 @@ export class View {
 
   /**
    * Updates the UI to reflect a given theme.
-   * @param {'light' | 'dark'} theme 
+   * @param {'auto' | 'light' | 'dark'} theme
    * @returns {void}
    */
   setTheme(theme) {
@@ -163,28 +163,16 @@ export class View {
    * @returns {void}
    */
   setWorkspaceInput(visible, value, isReadonly) {
+    this.workspaceSelect.hidden = visible;
+    this.workspaceActionsView.hidden = visible;
+    this.workspaceInput.hidden = !visible;
+    this.workspaceActionsEdit.hidden = !visible;
+    this.workspaceInput.classList.toggle('popup__workspace-input--confirm', !!isReadonly);
+
     if (visible) {
-      this.workspaceSelect.style.display = 'none';
-      this.workspaceActionsView.style.display = 'none';
-      this.workspaceInput.style.display = 'block';
-      this.workspaceActionsEdit.style.display = 'flex';
       this.workspaceInput.value = value;
       this.workspaceInput.readOnly = !!isReadonly;
-      if (isReadonly) {
-        this.workspaceInput.style.color = 'var(--color-clear-text)';
-        this.workspaceInput.style.borderColor = 'var(--color-clear-border)';
-        this.workspaceInput.style.textAlign = 'center';
-      } else {
-        this.workspaceInput.style.color = '';
-        this.workspaceInput.style.borderColor = '';
-        this.workspaceInput.style.textAlign = '';
-        this.workspaceInput.focus();
-      }
-    } else {
-      this.workspaceSelect.style.display = 'block';
-      this.workspaceActionsView.style.display = 'flex';
-      this.workspaceInput.style.display = 'none';
-      this.workspaceActionsEdit.style.display = 'none';
+      if (!isReadonly) this.workspaceInput.focus();
     }
   }
 

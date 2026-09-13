@@ -1,5 +1,7 @@
 # TabList
 
+[GitHub Repository](https://github.com/bderevyaga/TabList)
+
 TabList helps you manage many tabs quickly using one simple URL list.
 
 ## What it does
@@ -15,6 +17,7 @@ TabList helps you manage many tabs quickly using one simple URL list.
 - Adds or removes the current page URL from the active list via the browser context menu.
 - Supports a capture filter for limiting captured tab URLs with a regular expression.
 - Supports multiple saved lists and light, dark, or automatic themes.
+- Provides a compact, scrollable popup with keyboard focus indicators and reduced-motion support.
 
 ## Privacy
 
@@ -57,11 +60,30 @@ The extension will appear in the browser toolbar.
 - `example\\.com` - plain regular expression without flags.
 - `/example\\.com/i` - slash notation with flags.
 
+## Store screenshots
+
+The project-local [tablist-store-images skill](.agents/skills/tablist-store-images/SKILL.md) creates matching light and dark screenshots from the current popup with demonstration URLs.
+
+Invoke it in Codex from this project:
+
+```text
+$tablist-store-images
+```
+
+By default, it saves two **1280×800, 24-bit RGB PNG** images without transparency:
+
+- `promo/tablist-light-1280x800.png`
+- `promo/tablist-dark-1280x800.png`
+
+Request **640×400**, **JPEG**, or a single theme explicitly when needed. Both themes use the same sample data and framing. Existing files receive a numbered suffix; temporary previews stay outside `promo/`. Images are generated locally and are not uploaded automatically.
+
+The export helper requires Python with Pillow; this is only for image preparation, not for running the extension. See the skill for export and validation instructions. Screenshots made from a local preview use fixture data rather than a live Chrome session.
+
 ## Promotion and Badges
 
 To increase the chances of getting the **Featured** badge in the Chrome Web Store:
 
-1.  **High-Quality Assets:** Use the `advertisement.sh` script to generate promotional images. Ensure you upload clear, high-resolution screenshots of the extension in action.
+1.  **High-Quality Assets:** Use the project-local `tablist-store-images` skill for popup screenshots, or `advertisement.sh` for SVG-based promotional assets. Ensure you upload clear, high-resolution screenshots of the extension in action.
 2.  **Detailed Description:** Use the content from the "What it does" section for the store listing description.
 3.  **Nomination:** Once published, you can self-nominate the extension via the [Chrome Web Store Featured Nomination form](https://support.google.com/chrome_webstore/contact/featured_nomination).
 4.  **Identity Verification:** Complete the identity verification in the Chrome Web Store developer console to qualify for the **Established Publisher** badge.
@@ -78,6 +100,7 @@ The script updates the `version` field in `manifest.json` and creates an archive
 ## Project structure
 
 - `manifest.json` - Manifest V3 extension configuration.
+- `background.js` - toolbar badge and page context-menu actions.
 - `popup.html` - popup markup.
 - `popup.css` - popup styles.
 - `popup/main.js` - popup entry point.
@@ -92,3 +115,5 @@ The script updates the `version` field in `manifest.json` and creates an archive
 - `release.sh` - version bumping and release packaging.
 - `icons.sh` - icon generation from SVG.
 - `advertisement.sh` - advertisement image generation from SVG.
+- `.agents/skills/tablist-store-images/` - project-local screenshot skill and RGB export helper.
+- `promo/` - generated light and dark store images.
